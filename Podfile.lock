@@ -1,0 +1,16 @@
+PODS:
+  - ParSON (0.0.2)
+
+DEPENDENCIES:
+  - ParSON (from `~/Developer/ParSON`)
+
+EXTERNAL SOURCES:
+  ParSON:
+    :path: ~/Developer/ParSON
+
+SPEC CHECKSUMS:
+  ParSON: c6dc7033b730c537182cacc06996f1369aeb8ebb
+
+PODFILE CHECKSUM: 9310c8a94a49d470e66acf46e2edfe951f521d32
+
+COCOAPODS: 1.1.1

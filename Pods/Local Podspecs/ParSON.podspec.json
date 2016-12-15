@@ -1,0 +1,25 @@
+{
+  "name": "ParSON",
+  "version": "0.0.2",
+  "summary": "A lightweight JSON Parser to help avoid convoluted nested iteration.",
+  "description": "Apple provides a way to get JSON from a URL but after that generally parsing is left up to you, and it's generally not the cleanest of affairs. This is my personal take on providing a solution.",
+  "homepage": "https://github.com/Genhain/ParSON",
+  "license": {
+    "type": "MIT"
+  },
+  "authors": {
+    "Genhain": "voxhavoccanis@gmail.com"
+  },
+  "platforms": {
+    "ios": "8.0"
+  },
+  "source": {
+    "git": "https://github.com/Genhain/ParSON.git",
+    "tag": "0.0.2"
+  },
+  "source_files": "ParSON/*.swift",
+  "exclude_files": [
+    "ParSON/AppDelegate.swift",
+    "ParSON/ViewController.swift"
+  ]
+}

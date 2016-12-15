@@ -1,0 +1,30 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "3AC9C63848A3E38E60C65FFC56ABFF515284700E",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "C08B6601DF757442A9F9BC9B2EF822A2054419ED" : 9223372036854775807,
+    "3AC9C63848A3E38E60C65FFC56ABFF515284700E" : 9223372036854775807
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "FF8C71B3-375A-4F95-8C43-84A758564BF8",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "C08B6601DF757442A9F9BC9B2EF822A2054419ED" : "ParSON\/",
+    "3AC9C63848A3E38E60C65FFC56ABFF515284700E" : "WhatTodo\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "WhatTodo",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "WhatTodo.xcworkspace",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/Genhain\/WhatTodo.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "3AC9C63848A3E38E60C65FFC56ABFF515284700E"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/Genhain\/JSONObject-Temporary-.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "C08B6601DF757442A9F9BC9B2EF822A2054419ED"
+    }
+  ]
+}

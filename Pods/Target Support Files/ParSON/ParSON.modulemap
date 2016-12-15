@@ -1,0 +1,6 @@
+framework module ParSON {
+  umbrella header "ParSON-umbrella.h"
+
+  export *
+  module * { export * }
+}
