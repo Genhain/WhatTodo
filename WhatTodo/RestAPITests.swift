@@ -23,6 +23,7 @@ class URLSessionFake: URLSessionProtocol
     private var dataIterator: IndexingIterator<[Data]>?
     var testError: Error?
     let dataTask = FakeURLSessionDataTask()
+    var testURLResponse: URLResponse?
     
     private(set) var lastURL: URL?
     
@@ -34,7 +35,7 @@ class URLSessionFake: URLSessionProtocol
         else {
             self.testData = [try! JSONSerialization.data(withJSONObject: ["Test": "1"], options: .prettyPrinted)]
         }
-        
+
         dataIterator = (testData?.makeIterator())!
     }
     
@@ -50,7 +51,7 @@ class URLSessionFake: URLSessionProtocol
     func dataTask(with request: URLRequest, completionHandler: @escaping DataTaskResult) -> URLSessionDataTaskProtocol {
         self.lastRequest = request
         self.wasDataTaskWithRequestCalled = true
-        completionHandler(dataIterator?.next(), nil, testError)
+        completionHandler(dataIterator?.next(), testURLResponse, testError)
         return dataTask
     }
 }
@@ -77,9 +78,15 @@ class FakeURLSessionDataTask: URLSessionDataTaskProtocol {
 
 class RestAPITests: XCTestCase {
     
+    var spy: URLSessionFake?
+    var SUT: RestAPI?
+    
     override func setUp() {
         super.setUp()
         // Put setup code here. This method is called before the invocation of each test method in the class.
+        
+        spy = URLSessionFake(dataToReturn: nil)
+        SUT = RestAPI(urlSession: spy!)
     }
     
     override func tearDown() {
@@ -90,20 +97,17 @@ class RestAPITests: XCTestCase {
     func testPostRequest_URLSessionFake_dataTaskResumeCalled()
     {
         // Arrange
-        let spy = URLSessionFake(dataToReturn: nil)
-        let SUT = RestAPI(urlSession: spy)
-        
         let expectedURL = URL.temporaryURL(forFilename: "Test")
         
         // Act
-        SUT.postRequest(expectedURL, id: "", title: "", description: "") { (parson, response, error) in
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, response, error) in
             
         }
         
         // Assert
-        XCTAssertEqual("POST", spy.lastRequest!.httpMethod!)
-        XCTAssertTrue(spy.wasDataTaskWithRequestCalled)
-        XCTAssertTrue(spy.dataTask.resumeWasCalled)
+        XCTAssertEqual("POST", spy!.lastRequest!.httpMethod!)
+        XCTAssertTrue(spy!.wasDataTaskWithRequestCalled)
+        XCTAssertTrue(spy!.dataTask.resumeWasCalled)
     }
     
     func testPostRequest_URLSessionFake_RequestShouldEqualTestDataOne()
@@ -113,8 +117,8 @@ class RestAPITests: XCTestCase {
         
         guard expectedData != nil else {XCTFail(); return;}
         
-        let spy = URLSessionFake(dataToReturn: [expectedData!])
-        let SUT = RestAPI(urlSession: spy)
+        spy = URLSessionFake(dataToReturn: [expectedData!])
+        SUT = RestAPI(urlSession: spy!)
         
         let expectedURL = URL.temporaryURL(forFilename: "Test")
         let expectedID = "0"
@@ -122,13 +126,13 @@ class RestAPITests: XCTestCase {
         let expectedDescription = "testDescriptionOne"
         
         // Act
-        SUT.postRequest(expectedURL, id: expectedID, title: expectedTitle, description: expectedDescription) { (parson, response, error) in
+        SUT!.postRequest(expectedURL, id: expectedID, title: expectedTitle, description: expectedDescription) { (parson, response, error) in
             
         }
     
         // Assert
-        XCTAssertEqual(expectedURL, spy.lastRequest?.url)
-        XCTAssertEqual("id=\(expectedID)&title=\(expectedTitle)&description=\(expectedDescription)", String(data: spy.lastRequest!.httpBody!, encoding: String.Encoding.utf8))
+        XCTAssertEqual(expectedURL, spy!.lastRequest?.url)
+        XCTAssertEqual("id=\(expectedID)&title=\(expectedTitle)&description=\(expectedDescription)", String(data: spy!.lastRequest!.httpBody!, encoding: String.Encoding.utf8))
     }
     
     func testPostRequest_URLSessionFake_RequestShouldEqualTestDataTwo()
@@ -138,8 +142,8 @@ class RestAPITests: XCTestCase {
         
         guard expectedData != nil else {XCTFail(); return;}
         
-        let spy = URLSessionFake(dataToReturn: [expectedData!])
-        let SUT = RestAPI(urlSession: spy)
+        spy = URLSessionFake(dataToReturn: [expectedData!])
+        SUT = RestAPI(urlSession: spy!)
         
         let expectedURL = URL.temporaryURL(forFilename: "Test2")
         let expectedID = "1"
@@ -147,13 +151,13 @@ class RestAPITests: XCTestCase {
         let expectedDescription = "testDescriptionTwo"
         
         // Act
-        SUT.postRequest(expectedURL, id: expectedID, title: expectedTitle, description: expectedDescription) { (parson, response, error) in
+        SUT!.postRequest(expectedURL, id: expectedID, title: expectedTitle, description: expectedDescription) { (parson, response, error) in
             
         }
         
         // Assert
-        XCTAssertEqual(expectedURL, spy.lastRequest?.url)
-        XCTAssertEqual("id=\(expectedID)&title=\(expectedTitle)&description=\(expectedDescription)", String(data: spy.lastRequest!.httpBody!, encoding: String.Encoding.utf8))
+        XCTAssertEqual(expectedURL, spy?.lastRequest?.url)
+        XCTAssertEqual("id=\(expectedID)&title=\(expectedTitle)&description=\(expectedDescription)", String(data: spy!.lastRequest!.httpBody!, encoding: String.Encoding.utf8))
     }
     
     func testPostRequest_JSONHandlerFake_jsonObjectWasCalled()
@@ -161,12 +165,12 @@ class RestAPITests: XCTestCase {
         // Arrange
         let spy = JSONHandlerFake.self
         let stub = URLSessionFake(dataToReturn: nil)
-        let SUT = RestAPI(urlSession: stub, jsonHandler: spy)
+        SUT = RestAPI(urlSession: stub, jsonHandler: spy)
 
         let expectedURL = URL.temporaryURL(forFilename: "Test")
 
         // Act
-        SUT.postRequest(expectedURL, id: "", title: "", description: "") { (parson, response, error) in
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, response, error) in
             XCTAssertTrue(spy.wasJSonObjectCalled)
         }
     }
@@ -178,16 +182,16 @@ class RestAPITests: XCTestCase {
         
         guard expectedData != nil else {XCTFail(); return;}
         
-        let spy = URLSessionFake(dataToReturn: [expectedData!])
-        let SUT = RestAPI(urlSession: spy, jsonHandler:JSONHandlerFake.self)
+        spy = URLSessionFake(dataToReturn: [expectedData!])
+        SUT = RestAPI(urlSession: spy!, jsonHandler:JSONHandlerFake.self)
         
         let expectedURL = URL.temporaryURL(forFilename: "Test")
         
         // Act
-        SUT.postRequest(expectedURL, id: "", title: "", description: "") { (parson, response, error) in
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, response, error) in
             XCTAssertNotNil(parson)
             XCTAssertEqual("1", try? parson!.value(forKeyPath: "Test") as String)
-            XCTAssertEqual(String(data: spy.testData![0], encoding: String.Encoding.utf8), response!)
+            XCTAssertEqual(String(data: self.spy!.testData![0], encoding: String.Encoding.utf8), response!)
         }
     }
     
@@ -198,16 +202,16 @@ class RestAPITests: XCTestCase {
         
         guard expectedData != nil else {XCTFail(); return;}
         
-        let spy = URLSessionFake(dataToReturn: [expectedData!])
-        let SUT = RestAPI(urlSession: spy)
+        spy = URLSessionFake(dataToReturn: [expectedData!])
+        SUT = RestAPI(urlSession: spy!)
         
         let expectedURL = URL.temporaryURL(forFilename: "Test")
         
         // Act
-        SUT.postRequest(expectedURL, id: "", title: "", description: "") { (parson, response, error) in
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, response, error) in
             XCTAssertNotNil(parson)
             XCTAssertEqual("2", try? parson!.value(forKeyPath: "TestTwo") as String)
-            XCTAssertEqual(String(data: spy.testData![0], encoding: String.Encoding.utf8), response!)
+            XCTAssertEqual(String(data: self.spy!.testData![0], encoding: String.Encoding.utf8), response!)
         }
     }
     
@@ -218,18 +222,18 @@ class RestAPITests: XCTestCase {
         
         guard expectedData != nil else {XCTFail(); return;}
         
-        let spy = URLSessionFake(dataToReturn: [expectedData!])
-        let SUT = RestAPI(urlSession: spy)
+        spy = URLSessionFake(dataToReturn: [expectedData!])
+        SUT = RestAPI(urlSession: spy!)
         
         let expectedURL = URL.temporaryURL(forFilename: "Test")
         
         // Act
-        SUT.postRequest(expectedURL, id: "", title: "", description: "") { (parson, response, error) in
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, response, error) in
             XCTAssertNotNil(parson)
             XCTAssertEqual("1", try? parson!.value(forKeyPath: "[0]") as String)
             XCTAssertEqual("2", try? parson!.value(forKeyPath: "[1]") as String)
             XCTAssertEqual("test", try? parson!.value(forKeyPath: "[2]") as String)
-            XCTAssertEqual(String(data: spy.testData![0], encoding: String.Encoding.utf8), response!)
+            XCTAssertEqual(String(data: self.spy!.testData![0], encoding: String.Encoding.utf8), response!)
         }
     }
     
@@ -240,18 +244,18 @@ class RestAPITests: XCTestCase {
         
         guard expectedData != nil else {XCTFail(); return;}
         
-        let spy = URLSessionFake(dataToReturn: [expectedData!])
-        let SUT = RestAPI(urlSession: spy)
+        spy = URLSessionFake(dataToReturn: [expectedData!])
+        SUT = RestAPI(urlSession: spy!)
         
         let expectedURL = URL.temporaryURL(forFilename: "Test")
         
         // Act
-        SUT.postRequest(expectedURL, id: "", title: "", description: "") { (parson, response, error) in
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, response, error) in
             XCTAssertNotNil(parson)
             XCTAssertEqual("a", try? parson!.value(forKeyPath: "[0]") as String)
             XCTAssertEqual("b", try? parson!.value(forKeyPath: "[1]") as String)
             XCTAssertEqual("hello", try? parson!.value(forKeyPath: "[2]") as String)
-            XCTAssertEqual(String(data: spy.testData![0], encoding: String.Encoding.utf8), response!)
+            XCTAssertEqual(String(data: self.spy!.testData![0], encoding: String.Encoding.utf8), response!)
         }
     }
     
@@ -259,18 +263,15 @@ class RestAPITests: XCTestCase {
     func testPostRequest_URLSessionFakeTestErrorTest1_errorIsTest2()
     {
         // Arrange
-        let spy = URLSessionFake(dataToReturn: nil)
-        let SUT = RestAPI(urlSession: spy)
-        
-        spy.testError = URLSessionErrorFake.first
-        spy.testData = [try! JSONSerialization.data(withJSONObject: ["Test": "1"], options: .prettyPrinted)]
+        spy!.testError = URLSessionErrorFake.first
+        spy!.testData = [try! JSONSerialization.data(withJSONObject: ["Test": "1"], options: .prettyPrinted)]
         
         let expectedURL = URL.temporaryURL(forFilename: "Test")
         
         // Act
-        SUT.postRequest(expectedURL, id: "", title: "", description: "") { (parson, responseString, error) in
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, responseString, error) in
             XCTAssertNil(parson)
-            XCTAssertEqual(String(data: spy.testData![0], encoding: String.Encoding.utf8), responseString!)
+            XCTAssertEqual(String(data: self.spy!.testData![0], encoding: String.Encoding.utf8), responseString!)
             XCTAssertEqual(URLSessionErrorFake.first.rawValue, (error as! URLSessionErrorFake).rawValue)
         }
     }
@@ -278,19 +279,164 @@ class RestAPITests: XCTestCase {
     func testPostRequest_URLSessionFakeTestErrorTestTwo2_errorIsTestTwo2()
     {
         // Arrange
-        let spy = URLSessionFake(dataToReturn: nil)
-        let SUT = RestAPI(urlSession: spy)
-        
-        spy.testError = URLSessionErrorFake.second
-        spy.testData = [try! JSONSerialization.data(withJSONObject: ["TestTwo": "2"], options: .prettyPrinted)]
+        spy!.testError = URLSessionErrorFake.second
+        spy!.testData = [try! JSONSerialization.data(withJSONObject: ["TestTwo": "2"], options: .prettyPrinted)]
         
         let expectedURL = URL.temporaryURL(forFilename: "Test")
         
         // Act
-        SUT.postRequest(expectedURL, id: "", title: "", description: "") { (parson, responseString, error) in
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, responseString, error) in
             XCTAssertNil(parson)
-            XCTAssertEqual(String(data: spy.testData![0], encoding: String.Encoding.utf8), responseString!)
+            XCTAssertEqual(String(data: self.spy!.testData![0], encoding: String.Encoding.utf8), responseString!)
             XCTAssertEqual(URLSessionErrorFake.second.rawValue, (error as! URLSessionErrorFake).rawValue)
+        }
+    }
+    
+    func testPostRequest_HTTPStatusCode400_ReturnError()
+    {
+        // Arrange
+        spy!.testURLResponse = HTTPURLResponse.init(url: URL.temporaryURL(forFilename: ""), statusCode: RestAPIResponseCode.badRequest.rawValue, httpVersion: nil, headerFields: nil)
+        
+        let expectedURL = URL.temporaryURL(forFilename: "Test")
+        
+        // Act
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, responseString, error) in
+            XCTAssertNil(parson)
+            XCTAssertEqual(RestAPIResponseCode.badRequest, (error as! RestAPIResponseCode))
+        }
+    }
+    
+    func testPostRequest_HTTPStatusCode401_ReturnError()
+    {
+        // Arrange
+        spy!.testURLResponse = HTTPURLResponse.init(url: URL.temporaryURL(forFilename: ""), statusCode: RestAPIResponseCode.unauthorized.rawValue, httpVersion: nil, headerFields: nil)
+        
+        let expectedURL = URL.temporaryURL(forFilename: "Test")
+        
+        // Act
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, responseString, error) in
+            XCTAssertNil(parson)
+            XCTAssertEqual(RestAPIResponseCode.unauthorized, (error as! RestAPIResponseCode))
+        }
+    }
+    
+    func testPostRequest_HTTPStatusCode402_ReturnError()
+    {
+        // Arrange
+        spy!.testURLResponse = HTTPURLResponse.init(url: URL.temporaryURL(forFilename: ""), statusCode: RestAPIResponseCode.paymentRequired.rawValue, httpVersion: nil, headerFields: nil)
+        
+        
+        let expectedURL = URL.temporaryURL(forFilename: "Test")
+        
+        // Act
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, responseString, error) in
+            XCTAssertNil(parson)
+            XCTAssertEqual(RestAPIResponseCode.paymentRequired, (error as! RestAPIResponseCode))
+        }
+    }
+    
+    func testPostRequest_HTTPStatusCode403_ReturnError()
+    {
+        // Arrange
+        spy!.testURLResponse = HTTPURLResponse.init(url: URL.temporaryURL(forFilename: ""), statusCode: RestAPIResponseCode.forbidden.rawValue, httpVersion: nil, headerFields: nil)
+        
+        
+        let expectedURL = URL.temporaryURL(forFilename: "Test")
+        
+        // Act
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, responseString, error) in
+            XCTAssertNil(parson)
+            XCTAssertEqual(RestAPIResponseCode.forbidden, (error as! RestAPIResponseCode))
+        }
+    }
+    
+    func testPostRequest_HTTPStatusCode404_ReturnError()
+    {
+        // Arrange
+        spy!.testURLResponse = HTTPURLResponse.init(url: URL.temporaryURL(forFilename: ""), statusCode: RestAPIResponseCode.notFound.rawValue, httpVersion: nil, headerFields: nil)
+        
+        
+        let expectedURL = URL.temporaryURL(forFilename: "Test")
+        
+        // Act
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, responseString, error) in
+            XCTAssertNil(parson)
+            XCTAssertEqual(RestAPIResponseCode.notFound, (error as! RestAPIResponseCode))
+        }
+    }
+    
+    func testPostRequest_HTTPStatusCode429_ReturnError()
+    {
+        // Arrange
+        spy!.testURLResponse = HTTPURLResponse.init(url: URL.temporaryURL(forFilename: ""), statusCode: RestAPIResponseCode.rateLimitExceeded.rawValue, httpVersion: nil, headerFields: nil)
+        
+        
+        let expectedURL = URL.temporaryURL(forFilename: "Test")
+        
+        // Act
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, responseString, error) in
+            XCTAssertNil(parson)
+            XCTAssertEqual(RestAPIResponseCode.rateLimitExceeded, (error as! RestAPIResponseCode))
+        }
+    }
+    
+    func testPostRequest_HTTPStatusCode500_ReturnError()
+    {
+        // Arrange
+        spy!.testURLResponse = HTTPURLResponse.init(url: URL.temporaryURL(forFilename: ""), statusCode: RestAPIResponseCode.serverError.rawValue, httpVersion: nil, headerFields: nil)
+        
+        
+        let expectedURL = URL.temporaryURL(forFilename: "Test")
+        
+        // Act
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, responseString, error) in
+            XCTAssertNil(parson)
+            XCTAssertEqual(RestAPIResponseCode.serverError, (error as! RestAPIResponseCode))
+        }
+    }
+    
+    func testPostRequest_HTTPStatusCode200_ParSONNotNIL()
+    {
+        // Arrange
+        spy!.testURLResponse = HTTPURLResponse.init(url: URL.temporaryURL(forFilename: ""), statusCode: RestAPIResponseCode.OK.rawValue, httpVersion: nil, headerFields: nil)
+        
+        
+        let expectedURL = URL.temporaryURL(forFilename: "Test")
+        
+        // Act
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, responseString, error) in
+            XCTAssertNotNil(parson)
+            XCTAssertNil(error)
+        }
+    }
+    
+    func testPostRequest_HTTPStatusCode201_ParSONNotNIL()
+    {
+        // Arrange
+        spy!.testURLResponse = HTTPURLResponse.init(url: URL.temporaryURL(forFilename: ""), statusCode: RestAPIResponseCode.postSuccessful.rawValue, httpVersion: nil, headerFields: nil)
+        
+        
+        let expectedURL = URL.temporaryURL(forFilename: "Test")
+        
+        // Act
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, responseString, error) in
+            XCTAssertNotNil(parson)
+            XCTAssertNil(error)
+        }
+    }
+    
+    func testPostRequest_HTTPStatusCode204_ParSONNotNIL()
+    {
+        // Arrange
+        spy!.testURLResponse = HTTPURLResponse.init(url: URL.temporaryURL(forFilename: ""), statusCode: RestAPIResponseCode.deleteSuccessful.rawValue, httpVersion: nil, headerFields: nil)
+        
+        
+        let expectedURL = URL.temporaryURL(forFilename: "Test")
+        
+        // Act
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, responseString, error) in
+            XCTAssertNotNil(parson)
+            XCTAssertNil(error)
         }
     }
 }

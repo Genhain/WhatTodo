@@ -40,8 +40,24 @@ protocol JSONHandlerProtocol {
 
 extension JSONSerialization: JSONHandlerProtocol {}
 
-class RestAPI
+public enum RestAPIResponseCode: Int, Error
 {
+    case OK = 200
+    case postSuccessful = 201
+    case deleteSuccessful = 204
+    case badRequest = 400
+    case unauthorized = 401
+    case paymentRequired = 402
+    case forbidden = 403
+    case notFound = 404
+    case rateLimitExceeded = 429
+    case serverError = 500
+}
+
+public class RestAPI
+{
+    
+    
     public typealias ServiceResponse = (ParSON?, _ responseString: String?, Error?) -> Void
     private(set) var urlSession: URLSessionProtocol
     private(set) var jsonHandler: JSONHandlerProtocol.Type
@@ -65,7 +81,16 @@ class RestAPI
             
             let responseString = String(data: data!, encoding: String.Encoding.utf8)
             
+            
             if let error = dataTaskError {
+                onCompletion(nil, responseString, error)
+                return
+            }
+            else if let httpStatus = response as? HTTPURLResponse,
+                        !self.successfulresponse(forHTTPStatusCode: httpStatus.statusCode) {
+                
+                let error = self.requestError(forHTTPStatusCode: httpStatus.statusCode)
+                
                 onCompletion(nil, responseString, error)
                 return
             }
@@ -82,5 +107,39 @@ class RestAPI
         }
         
         task.resume()
+    }
+    
+    private func successfulresponse(forHTTPStatusCode code: Int) -> Bool {
+        return code == 200 || code == 201 || code == 204
+    }
+    
+    private func requestError(forHTTPStatusCode code: Int) -> RestAPIResponseCode {
+        
+        switch(code){
+            
+        case RestAPIResponseCode.badRequest.rawValue:
+            return RestAPIResponseCode.badRequest
+            
+        case RestAPIResponseCode.unauthorized.rawValue:
+            return RestAPIResponseCode.unauthorized
+            
+        case RestAPIResponseCode.paymentRequired.rawValue:
+            return RestAPIResponseCode.paymentRequired
+            
+        case RestAPIResponseCode.forbidden.rawValue:
+            return RestAPIResponseCode.forbidden
+            
+        case RestAPIResponseCode.notFound.rawValue:
+            return RestAPIResponseCode.notFound
+            
+        case RestAPIResponseCode.rateLimitExceeded.rawValue:
+            return RestAPIResponseCode.rateLimitExceeded
+            
+        case RestAPIResponseCode.serverError.rawValue:
+            return RestAPIResponseCode.serverError
+            
+        default:
+            return RestAPIResponseCode.serverError
+        }
     }
 }
