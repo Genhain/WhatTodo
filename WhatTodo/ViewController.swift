@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import ParSON
 
 class ViewController: UIViewController {
 
@@ -16,9 +17,9 @@ class ViewController: UIViewController {
         
         let restAPI = RestAPI()
         
-        restAPI.postRequest(URL(string: "https://sheetsu.com/apis/v1.0/6e59b7bf3d94")!, id: "123", title: "Testing post api", description: "testing my post api", onCompletion: { (parson, responseString, error) in
-            print(responseString)
-        })
+//        restAPI.postRequest(URL(string: "https://sheetsu.com/apis/v1.0/6e59b7bf3d94")!, id: "123", title: "Testing post api", description: "testing my post api", onCompletion: { (parson, responseString, error) in
+//            print(responseString)
+//        })
     }
 
     override func didReceiveMemoryWarning() {

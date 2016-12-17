@@ -40,6 +40,11 @@ protocol JSONHandlerProtocol {
 
 extension JSONSerialization: JSONHandlerProtocol {}
 
+public protocol RequestStatusHandlerProtocol {
+    mutating func requestStatus(statusCode code:Int) -> RestAPIResponseCode
+    mutating func successfulRequest(forHTTPStatusCode code: Int) -> Bool
+}
+
 public enum RestAPIResponseCode: Int, Error
 {
     case OK = 200
@@ -56,15 +61,16 @@ public enum RestAPIResponseCode: Int, Error
 
 public class RestAPI
 {
-    
-    
     public typealias ServiceResponse = (ParSON?, _ responseString: String?, Error?) -> Void
     private(set) var urlSession: URLSessionProtocol
     private(set) var jsonHandler: JSONHandlerProtocol.Type
+    private(set) var requestStatusHandler: RequestStatusHandlerProtocol
     
-    init(urlSession: URLSessionProtocol = URLSession.shared, jsonHandler: JSONHandlerProtocol.Type = JSONSerialization.self) {
+    
+    init(urlSession: URLSessionProtocol = URLSession.shared, jsonHandler: JSONHandlerProtocol.Type = JSONSerialization.self, requestStatusHandler: RequestStatusHandlerProtocol = RequestStatusHandler()) {
         self.urlSession = urlSession
         self.jsonHandler = jsonHandler
+        self.requestStatusHandler = requestStatusHandler
     }
     
     public func postRequest(_ url: URL, id:String, title:String, description:String , onCompletion: @escaping ServiceResponse) {
@@ -76,45 +82,54 @@ public class RestAPI
         request.httpBody = postString.data(using: String.Encoding.utf8)
         
         let task = urlSession.dataTask(with: request) { (data, response, dataTaskError) in
-            
-            let json = try? self.jsonHandler.jsonObject(with: data!, options: [])
-            
-            let responseString = String(data: data!, encoding: String.Encoding.utf8)
-            
-            
-            if let error = dataTaskError {
-                onCompletion(nil, responseString, error)
-                return
-            }
-            else if let httpStatus = response as? HTTPURLResponse,
-                        !self.successfulresponse(forHTTPStatusCode: httpStatus.statusCode) {
-                
-                let error = self.requestError(forHTTPStatusCode: httpStatus.statusCode)
-                
-                onCompletion(nil, responseString, error)
-                return
-            }
-            
-            if let jsonDictionary = json as? [String: Any] {
-                onCompletion(ParSON(collection: jsonDictionary), responseString, nil)
-                return
-            }
-            
-            if let jsonArray = json as? [Any] {
-                onCompletion(ParSON(collection: jsonArray), responseString, nil)
-            }
-
+            self.dataTask(data: data, response: response, error: dataTaskError, onCompletion: onCompletion)
         }
         
         task.resume()
     }
     
-    private func successfulresponse(forHTTPStatusCode code: Int) -> Bool {
-        return code == 200 || code == 201 || code == 204
+    public func getRequest(_ url: URL, onCompletion: @escaping ServiceResponse) {
+        var request = URLRequest(url: url)
+        
+        request.httpMethod = "GET"
+        
+        urlSession.dataTask(with: request) { (data, response, dataTaskError) in
+            self.dataTask(data: data, response: response, error: dataTaskError, onCompletion: onCompletion)
+        }.resume()
     }
     
-    private func requestError(forHTTPStatusCode code: Int) -> RestAPIResponseCode {
+    private func dataTask(data: Data?, response: URLResponse?, error: Error?, onCompletion: ServiceResponse) {
+        let json = try? self.jsonHandler.jsonObject(with: data!, options: [])
         
+        let responseString = String(data: data!, encoding: String.Encoding.utf8)
+        
+        if self.handleErrors(error: error, response: response, responseString: responseString, onComplete: onCompletion) { return }
+        
+        onCompletion(ParSON.create(data: json),responseString, nil)
+    }
+    
+    private func handleErrors(error: Error?, response: URLResponse?, responseString:String?, onComplete: ServiceResponse) -> Bool
+    {
+        if error != nil {
+            onComplete(nil, responseString, error)
+            return true
+        }
+        else if let httpStatus = response as? HTTPURLResponse,
+            !self.requestStatusHandler.successfulRequest(forHTTPStatusCode: httpStatus.statusCode) {
+            
+            let error = self.requestStatusHandler.requestStatus(statusCode: httpStatus.statusCode)
+            
+            onComplete(nil, responseString, error)
+            return true
+        }
+        
+        return false
+    }
+}
+
+struct RequestStatusHandler: RequestStatusHandlerProtocol {
+    
+    func requestStatus(statusCode code: Int) -> RestAPIResponseCode {
         switch(code){
             
         case RestAPIResponseCode.badRequest.rawValue:
@@ -141,5 +156,24 @@ public class RestAPI
         default:
             return RestAPIResponseCode.serverError
         }
+    }
+    
+    func successfulRequest(forHTTPStatusCode code: Int) -> Bool {
+        return code == 200 || code == 201 || code == 204
+    }
+}
+
+extension ParSON {
+    static func create(data: Any) -> ParSON? {
+        
+        if let jsonDictionary = data as? [String: Any] {
+            return ParSON(collection: jsonDictionary)
+        }
+        
+        if let jsonArray = data as? [Any] {
+            return ParSON(collection: jsonArray)
+        }
+        
+        return nil
     }
 }
