@@ -81,11 +81,7 @@ public class RestAPI
         let postString = "id=\(id)&title=\(title)&description=\(description)"
         request.httpBody = postString.data(using: String.Encoding.utf8)
         
-        let task = urlSession.dataTask(with: request) { (data, response, dataTaskError) in
-            self.dataTask(data: data, response: response, error: dataTaskError, onCompletion: onCompletion)
-        }
-        
-        task.resume()
+        self.beginDataTask(with: request, onCompletion: onCompletion)
     }
     
     public func getRequest(_ url: URL, onCompletion: @escaping ServiceResponse) {
@@ -93,19 +89,20 @@ public class RestAPI
         
         request.httpMethod = "GET"
         
-        urlSession.dataTask(with: request) { (data, response, dataTaskError) in
-            self.dataTask(data: data, response: response, error: dataTaskError, onCompletion: onCompletion)
-        }.resume()
+        self.beginDataTask(with: request, onCompletion: onCompletion)
     }
     
-    private func dataTask(data: Data?, response: URLResponse?, error: Error?, onCompletion: ServiceResponse) {
-        let json = try? self.jsonHandler.jsonObject(with: data!, options: [])
+    private func beginDataTask(with request:URLRequest, onCompletion: @escaping ServiceResponse) {
         
-        let responseString = String(data: data!, encoding: String.Encoding.utf8)
-        
-        if self.handleErrors(error: error, response: response, responseString: responseString, onComplete: onCompletion) { return }
-        
-        onCompletion(ParSON.create(data: json),responseString, nil)
+        urlSession.dataTask(with: request) { (data, response, dataTaskError) in
+            let json = try? self.jsonHandler.jsonObject(with: data!, options: [])
+            
+            let responseString = String(data: data!, encoding: String.Encoding.utf8)
+            
+            if self.handleErrors(error: dataTaskError, response: response, responseString: responseString, onComplete: onCompletion) { return }
+            
+            onCompletion(ParSON.create(data: json),responseString, nil)
+        }.resume()
     }
     
     private func handleErrors(error: Error?, response: URLResponse?, responseString:String?, onComplete: ServiceResponse) -> Bool
