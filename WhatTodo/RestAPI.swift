@@ -73,12 +73,12 @@ public class RestAPI
         self.requestStatusHandler = requestStatusHandler
     }
     
-    public func postRequest(_ url: URL, id:String, title:String, description:String , onCompletion: @escaping ServiceResponse) {
+    public func postRequest(_ url: URL, title:String, dateTime: Date = Date(), onCompletion: @escaping ServiceResponse) {
         
         var request = URLRequest(url: url)
         
         request.httpMethod = "POST"
-        let postString = "id=\(id)&title=\(title)&description=\(description)"
+        let postString = "datetime=\(dateTime.description)&taskDetail=\(title)&isFinished=no"
         request.httpBody = postString.data(using: String.Encoding.utf8)
         
         self.beginDataTask(with: request, onCompletion: onCompletion)

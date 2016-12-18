@@ -22,11 +22,16 @@ class ViewController: UIViewController {
 //            print(responseString)
 //        })
         
-        restAPI.deleteRequest(url!, field: "id", fieldValue: "1") { (parSON, responseString, error) in
+        restAPI.postRequest(url!, title: "test") { (parSON, responseString, error) in
             print(parSON)
             print(responseString)
             print(error)
         }
+//        restAPI.deleteRequest(url!, field: "id", fieldValue: "1") { (parSON, responseString, error) in
+//            print(parSON)
+//            print(responseString)
+//            print(error)
+//        }
         
        
     }
