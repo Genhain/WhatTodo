@@ -92,9 +92,25 @@ public class RestAPI
         self.beginDataTask(with: request, onCompletion: onCompletion)
     }
     
+    public func deleteRequest(_ url: URL, field: String, fieldValue value: String, onCompletion: @escaping ServiceResponse) {
+        let urlForDeleteion = url.appendingPathComponent("/\(field)/\(value)")
+        var request = URLRequest(url: urlForDeleteion)
+        
+        request.httpMethod = "DELETE"
+        
+        self.beginDataTask(with: request, onCompletion: onCompletion)
+    }
+    
     private func beginDataTask(with request:URLRequest, onCompletion: @escaping ServiceResponse) {
         
         urlSession.dataTask(with: request) { (data, response, dataTaskError) in
+            
+            if let httpResponse = response as? HTTPURLResponse,
+                httpResponse.statusCode == RestAPIResponseCode.deleteSuccessful.rawValue {
+                onCompletion(nil,"204 Delete Successful", nil)
+                return
+            }
+            
             let json = try? self.jsonHandler.jsonObject(with: data!, options: [])
             
             let responseString = String(data: data!, encoding: String.Encoding.utf8)

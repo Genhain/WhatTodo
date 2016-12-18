@@ -19,7 +19,7 @@ enum URLSessionErrorFake: Int, Error
 //MARK:Fake
 class URLSessionFake: URLSessionProtocol
 {
-    var testData: [Data]? {  didSet{ dataIterator = (testData?.makeIterator())! } }
+    var testData: [Data]? {  didSet{ if testData != nil{ dataIterator = (testData?.makeIterator())! } else { dataIterator = nil } } }
     private var dataIterator: IndexingIterator<[Data]>?
     var testError: Error?
     let dataTask = FakeURLSessionDataTask()
@@ -80,10 +80,11 @@ class RequestStatusHandlerFake: RequestStatusHandlerProtocol {
     
     private(set) var wasReqestStatusCalled = false
     private(set) var wasSuccessfulResponseCalled = false
+    var stubRequestStatus: RestAPIResponseCode = RestAPIResponseCode.OK
     
     public func requestStatus(statusCode code: Int) -> RestAPIResponseCode {
         self.wasReqestStatusCalled = true
-        return RestAPIResponseCode.OK
+        return stubRequestStatus
     }
     
     public func successfulRequest(forHTTPStatusCode code: Int) -> Bool {
@@ -452,7 +453,7 @@ class RestAPITests: XCTestCase {
         
         // Act
         SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, responseString, error) in
-            XCTAssertNotNil(parson)
+            XCTAssertNil(parson)
             XCTAssertNil(error)
         }
     }
@@ -670,5 +671,107 @@ class RestAPITests: XCTestCase {
             XCTAssertTrue(requestStatusHandlerFake.wasSuccessfulResponseCalled)
             XCTAssertTrue(requestStatusHandlerFake.wasReqestStatusCalled)
         }
+    }
+    
+    //MARK: Delete Tests
+    
+    func testDeleteRequest_FakeDataSession_VerifyConstantsAndMethodCalls()
+    {
+        // Arrange
+        let expectedURL = URL.temporaryURL(forFilename: "")
+        spy?.testURLResponse = HTTPURLResponse.init(url: expectedURL, statusCode: RestAPIResponseCode.deleteSuccessful.rawValue, httpVersion: nil, headerFields: nil)
+        
+        // Act
+        // Assert
+        var didCallClosure = false
+        
+        SUT!.deleteRequest(expectedURL, field: "a", fieldValue: "a") { (parSON, responseString, error) in
+            didCallClosure = true
+        }
+        
+        XCTAssertTrue(didCallClosure)
+        
+        XCTAssertEqual("DELETE", spy!.lastRequest!.httpMethod!)
+        XCTAssertTrue(spy!.wasDataTaskWithRequestCalled)
+        XCTAssertTrue(spy!.dataTask.resumeWasCalled)
+    }
+    
+    func testDeleteRequest_FakeDataSession_VerifyVariablesFirstTest()
+    {
+        // Arrange
+        var expectedURL = URL(string: "FirstTest")!
+        let expectedField = "testFieldOne"
+        let expectedValue = "testValueOne"
+        spy?.testURLResponse = HTTPURLResponse.init(url: expectedURL, statusCode: RestAPIResponseCode.deleteSuccessful.rawValue, httpVersion: nil, headerFields: nil)
+        
+        // Act
+        // Assert
+        var didCallClosure = false
+        SUT!.deleteRequest(expectedURL, field: expectedField, fieldValue: expectedValue) { (parSON, responseString, error) in
+            didCallClosure = true
+            expectedURL.appendPathComponent("/\(expectedField)/\(expectedValue)")
+            
+            XCTAssertEqual(expectedURL, self.spy!.lastRequest!.url)
+        }
+       
+        XCTAssertTrue(didCallClosure)
+    }
+
+    func testDeleteRequest_FakeDataSession_VerifyVariablesSecondTest()
+    {
+        // Arrange
+        var expectedURL = URL(string: "SecondTest")!
+        let expectedField = "testFieldTwo"
+        let expectedValue = "testValueTwo"
+        spy?.testURLResponse = HTTPURLResponse.init(url: expectedURL, statusCode: RestAPIResponseCode.deleteSuccessful.rawValue, httpVersion: nil, headerFields: nil)
+        
+        // Act
+        // Assert
+        var didCallClosure = false
+        SUT!.deleteRequest(expectedURL, field: expectedField, fieldValue: expectedValue) { (parSON, responseString, error) in
+            didCallClosure = true
+            expectedURL.appendPathComponent("/\(expectedField)/\(expectedValue)")
+            XCTAssertEqual(expectedURL, self.spy!.lastRequest!.url)
+        }
+        
+        XCTAssertTrue(didCallClosure)
+    }
+ 
+    func testDeleteRequest_URLSessionFakeDictionaryData_VerifyDataFromDataTaskIsFirstTest()
+    {
+        // Arrange
+        let expectedURL = URL.temporaryURL(forFilename: "Test")
+        
+        spy?.testURLResponse = HTTPURLResponse.init(url: expectedURL, statusCode: RestAPIResponseCode.deleteSuccessful.rawValue, httpVersion: nil, headerFields: nil)
+        SUT = RestAPI(urlSession: spy!, jsonHandler:JSONHandlerFake.self)
+        
+        // Act
+        SUT?.deleteRequest(expectedURL, field: "a", fieldValue: "b", onCompletion: { (parSON, responseString, error) in
+            XCTAssertNil(parSON)
+            XCTAssertNil(error)
+            XCTAssertEqual("204 Delete Successful", responseString!)
+
+        })
+    }
+    
+    func testDeleteRequest_URLSessionFake404_VerifyDataFromDataTaskIsSecondTest()
+    {
+        // Arrange
+        let expectedURL = URL.temporaryURL(forFilename: "Test")
+        
+        spy?.testURLResponse = HTTPURLResponse.init(url: expectedURL, statusCode: RestAPIResponseCode.notFound.rawValue, httpVersion: nil, headerFields: nil)
+        spy?.testData = [Data()]
+        SUT = RestAPI(urlSession: spy!, jsonHandler:JSONHandlerFake.self)
+        
+        // Act
+        var didCallClosure = false
+        
+        SUT?.deleteRequest(expectedURL, field: "a", fieldValue: "b", onCompletion: { (parSON, responseString, error) in
+            didCallClosure = true
+            XCTAssertNil(parSON)
+            XCTAssertEqual(RestAPIResponseCode.notFound.rawValue, (error as! RestAPIResponseCode).rawValue)
+        })
+        
+        XCTAssertTrue(didCallClosure)
     }
 }
