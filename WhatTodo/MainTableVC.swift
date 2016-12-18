@@ -89,11 +89,13 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            //remove the deleted object from your data source.
-            //If your data source is an NSMutableArray, do this
             let object = self.fetchedResultsController.object(at: indexPath)
             coreDataStack.persistentContainer.viewContext.delete(object)
             coreDataStack.saveContext()
+        }
+        
+        if editingStyle == .insert {
+            
         }
     }
     

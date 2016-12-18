@@ -37,11 +37,20 @@
                                             <nil key="textColor"/>
                                             <nil key="highlightedColor"/>
                                         </label>
+                                        <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="3aF-22-ENh">
+                                            <frame key="frameInset" minX="337" minY="6" width="30" height="30"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                            <state key="normal" backgroundImage="Unchecked Circle"/>
+                                            <connections>
+                                                <action selector="statusButtonTouchUpInside:" destination="Pdy-JS-zB6" eventType="touchUpInside" id="WWA-qu-OW1"/>
+                                            </connections>
+                                        </button>
                                     </subviews>
                                 </tableViewCellContentView>
                                 <connections>
                                     <outlet property="dateLabel" destination="aEr-Fa-cx3" id="czV-OO-ZPg"/>
                                     <outlet property="detailLabel" destination="kaP-7v-qSp" id="kKy-ux-itJ"/>
+                                    <outlet property="statusButton" destination="3aF-22-ENh" id="MiC-do-urG"/>
                                 </connections>
                             </tableViewCell>
                         </prototypes>
@@ -73,4 +82,7 @@
             <point key="canvasLocation" x="-1583" y="-202"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="Unchecked Circle" width="50" height="50"/>
+    </resources>
 </document>
