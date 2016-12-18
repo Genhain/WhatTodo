@@ -18,17 +18,6 @@ class ViewController: UIViewController {
         let restAPI = RestAPI()
         let url = URL(string: "https://sheetsu.com/apis/v1.0/6e59b7bf3d94")
         
-//        restAPI.postRequest(URL(string: "https://sheetsu.com/apis/v1.0/6e59b7bf3d94")!, id: "123", title: "Testing post api", description: "testing my post api", onCompletion: { (parson, responseString, error) in
-//            print(responseString)
-//        })
-        
-        restAPI.deleteRequest(url!, field: "id", fieldValue: "1") { (parSON, responseString, error) in
-            print(parSON)
-            print(responseString)
-            print(error)
-        }
-        
-       
     }
 
     override func didReceiveMemoryWarning() {
