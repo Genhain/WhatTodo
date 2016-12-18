@@ -87,16 +87,20 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
         return true
     }
     
-    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
-        if editingStyle == .delete {
+    func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
+        
+        let deleteRowAction = UITableViewRowAction(style: .default, title: "Delete") { (rowAction, indexPath) in
             let object = self.fetchedResultsController.object(at: indexPath)
             coreDataStack.persistentContainer.viewContext.delete(object)
             coreDataStack.saveContext()
         }
         
-        if editingStyle == .insert {
-            
+        let moreRowAction = UITableViewRowAction(style: .default, title: "Edit") { (rowAction, indexPath) in
+            //edit task here.
         }
+        moreRowAction.backgroundColor = #colorLiteral(red: 0.8039215803, green: 0.8039215803, blue: 0.8039215803, alpha: 1)
+        
+        return [deleteRowAction,moreRowAction]
     }
     
     //MARK: UITableViewDataSource
