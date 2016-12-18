@@ -15,7 +15,7 @@ public class ToDo: NSManagedObject {
     public override func awakeFromInsert() {
         super.awakeFromInsert()
         
-        self.dataTime = Date() as NSDate?
+        self.dateTime = Date() as NSDate?
         self.isFinished = false
         self.isSynchronized = false
     }

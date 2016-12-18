@@ -8,13 +8,14 @@
 
 import UIKit
 import ParSON
+import CoreData
 
 private let todoEndPointURL = URL(string: "https://sheetsu.com/apis/v1.0/6e59b7bf3d94")!
 
 class MainTableVC: UITableViewController {
-
-    var toDos: [TodoTask] = []
     
+    var dataProvider: ToDoListDataProvider!
+
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -23,9 +24,10 @@ class MainTableVC: UITableViewController {
         let button = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(MainTableVC.addTodo))
         self.navigationItem.rightBarButtonItem = button
         
-        let todo = ToDo(context: coreDataStack.persistentContainer.viewContext)
+        self.dataProvider = ToDoListDataProvider(tableView: self.tableView)
         
-        print(todo)
+        self.tableView.delegate = dataProvider
+        self.tableView.dataSource = dataProvider
     }
     
     func addTodo()
@@ -39,10 +41,12 @@ class MainTableVC: UITableViewController {
         let confirmAction = UIAlertAction(title: "Confirm", style: .default) { (_) in
             if let field = alertController.textFields?[0] {
                 // store your data
-                let todo = TodoTask.init(taskDetail: field.text!)
-                self.toDos.append(todo)
-                UserDefaults.standard.set(self.toDos, forKey: "toDos")
-                UserDefaults.standard.synchronize()
+                let todo = ToDo(context: coreDataStack.persistentContainer.viewContext)
+                
+                todo.detail = field.text!
+                
+                coreDataStack.saveContext()
+        
             } else {
                 // user did not fill field
             }
@@ -64,18 +68,110 @@ class MainTableVC: UITableViewController {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
 }
 
-struct TodoTask {
-    var dateTime: Date?
-    var detail: String?
-    var isFinished: Bool = false
-    var isSynced: Bool = false
+class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource, NSFetchedResultsControllerDelegate {
     
-    init(taskDetail detail: String) {
-        self.dateTime = Date()
-        self.detail = detail
+    var fetchedResultsController: NSFetchedResultsController<ToDo>!
+    var tableView: UITableView?
+    
+    init(tableView: UITableView) {
+        self.tableView = tableView
+    }
+    
+    //MARK: UITableViewDataSource
+    
+    @available(iOS 2.0, *)
+    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
+        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell",  for: indexPath) as! ToDoCell
+        
+        self.configureCell(cell: cell, indexPath: indexPath)
+        
+        return cell
+    }
+
+    @available(iOS 2.0, *)
+    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        
+        guard let frc = self.fetchedResultsController else { return 0 }
+        
+        if let sections = frc.sections {
+            let sectionInfo = sections[section]
+            return sectionInfo.numberOfObjects
+        }
+        
+        return 0
+    }
+    
+    func numberOfSections(in tableView: UITableView) -> Int {
+        
+        guard let frc = self.fetchedResultsController else { return 0 }
+        
+        if let sections = frc.sections {
+            return sections.count
+        }
+        
+        return 0
+    }
+    
+    //MARK: Functionality
+    
+    func configureCell(cell: ToDoCell, indexPath: IndexPath) {
+        let todoItem = self.fetchedResultsController.object(at: indexPath)
+        cell.configureCell(forToDo: todoItem)
+    }
+    
+    func attemptFetch() {
+        
+        let fetchRequest: NSFetchRequest<ToDo> = ToDo.fetchRequest()
+        let dateSort = NSSortDescriptor(key: "dateTime", ascending: false)
+        fetchRequest.sortDescriptors = [dateSort]
+        
+        self.fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: coreDataStack.persistentContainer.viewContext, sectionNameKeyPath: nil, cacheName: nil)
+        
+        do {
+            try self.fetchedResultsController.performFetch()
+        } catch {
+            print(error)
+        }
+    }
+    
+    func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        
+        self.tableView?.beginUpdates()
+    }
+    
+    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        self.tableView?.endUpdates()
+    }
+    
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+        
+        switch type {
+        case .insert:
+            if let indexPath = newIndexPath {
+                self.tableView?.insertRows(at: [indexPath], with: .fade)
+            }
+            break
+        case .delete:
+            if let indexPath = indexPath {
+                self.tableView?.deleteRows(at: [indexPath], with: .fade)
+            }
+            break
+        case .move:
+            if let indexPath = indexPath,
+                let newIndexPath = newIndexPath {
+                tableView?.moveRow(at: indexPath, to: newIndexPath)
+            }
+            break
+        case .update:
+            if let indexPath = indexPath {
+                let cell = tableView?.cellForRow(at: indexPath) as! ToDoCell
+                self.configureCell(cell: cell, indexPath: indexPath)
+            }
+            break
+        }
     }
 }
 

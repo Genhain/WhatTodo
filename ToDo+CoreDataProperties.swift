@@ -16,7 +16,7 @@ extension ToDo {
         return NSFetchRequest<ToDo>(entityName: "ToDo");
     }
 
-    @NSManaged public var dataTime: NSDate?
+    @NSManaged public var dateTime: NSDate?
     @NSManaged public var detail: String?
     @NSManaged public var isFinished: Bool
     @NSManaged public var isSynchronized: Bool

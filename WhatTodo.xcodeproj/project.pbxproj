@@ -19,6 +19,7 @@
 		08314D3B1E027EC300A4D5BD /* RestAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08314D3A1E027EC300A4D5BD /* RestAPI.swift */; };
 		0899A0CA1E0707A400FDA851 /* ToDo+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0899A0C81E0707A400FDA851 /* ToDo+CoreDataClass.swift */; };
 		0899A0CB1E0707A400FDA851 /* ToDo+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0899A0C91E0707A400FDA851 /* ToDo+CoreDataProperties.swift */; };
+		0899A0CD1E0724FB00FDA851 /* ToDoCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0899A0CC1E0724FB00FDA851 /* ToDoCell.swift */; };
 		0CAD8169E46B7897EB4C4F44 /* Pods_WhatTodoTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8A8A66761539CF2B68336BF /* Pods_WhatTodoTests.framework */; };
 		25CE5DDC7B1F831C33C8F6CF /* Pods_WhatTodoUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D6A56E40DF104A0086E3B96 /* Pods_WhatTodoUITests.framework */; };
 		CDFFCAC77A0BE0303B943EC6 /* Pods_WhatTodo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3B20C6B807C1A0E725553860 /* Pods_WhatTodo.framework */; };
@@ -60,6 +61,7 @@
 		08314D3A1E027EC300A4D5BD /* RestAPI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RestAPI.swift; sourceTree = "<group>"; };
 		0899A0C81E0707A400FDA851 /* ToDo+CoreDataClass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "ToDo+CoreDataClass.swift"; path = "../ToDo+CoreDataClass.swift"; sourceTree = "<group>"; };
 		0899A0C91E0707A400FDA851 /* ToDo+CoreDataProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "ToDo+CoreDataProperties.swift"; path = "../ToDo+CoreDataProperties.swift"; sourceTree = "<group>"; };
+		0899A0CC1E0724FB00FDA851 /* ToDoCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ToDoCell.swift; sourceTree = "<group>"; };
 		1D6A56E40DF104A0086E3B96 /* Pods_WhatTodoUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_WhatTodoUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B20C6B807C1A0E725553860 /* Pods_WhatTodo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_WhatTodo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4B474820329C0D5ADB68A4F0 /* Pods-WhatTodo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WhatTodo.release.xcconfig"; path = "Pods/Target Support Files/Pods-WhatTodo/Pods-WhatTodo.release.xcconfig"; sourceTree = "<group>"; };
@@ -130,6 +132,7 @@
 				08314D071E022B5900A4D5BD /* MainTableVC.swift */,
 				08314D381E027E0E00A4D5BD /* URL+Testing.swift */,
 				08314D091E022B5900A4D5BD /* Main.storyboard */,
+				0899A0CC1E0724FB00FDA851 /* ToDoCell.swift */,
 				08314D0F1E022B5900A4D5BD /* Assets.xcassets */,
 				08314D111E022B5900A4D5BD /* LaunchScreen.storyboard */,
 				08314D141E022B5900A4D5BD /* Info.plist */,
@@ -469,6 +472,7 @@
 				08314D0E1E022B5900A4D5BD /* WhatTodo.xcdatamodeld in Sources */,
 				08314D081E022B5900A4D5BD /* MainTableVC.swift in Sources */,
 				0899A0CA1E0707A400FDA851 /* ToDo+CoreDataClass.swift in Sources */,
+				0899A0CD1E0724FB00FDA851 /* ToDoCell.swift in Sources */,
 				0899A0CB1E0707A400FDA851 /* ToDo+CoreDataProperties.swift in Sources */,
 				08314D061E022B5900A4D5BD /* AppDelegate.swift in Sources */,
 			);
