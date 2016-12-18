@@ -178,15 +178,16 @@ struct RequestStatusHandler: RequestStatusHandlerProtocol {
 
 extension ParSON {
     static func create(data: Any) -> ParSON? {
+        var parson: ParSON?
         
         if let jsonDictionary = data as? [String: Any] {
-            return ParSON(collection: jsonDictionary)
+            parson = ParSON(collection: jsonDictionary)
         }
         
         if let jsonArray = data as? [Any] {
-            return ParSON(collection: jsonArray)
+            parson = ParSON(collection: jsonArray)
         }
         
-        return nil
+        return parson
     }
 }

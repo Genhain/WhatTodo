@@ -413,6 +413,21 @@ class RestAPITests: XCTestCase {
         }
     }
     
+    func testPostRequest_HTTPStatusCodeNegative100_ReturnServerError()
+    {
+        // Arrange
+        spy!.testURLResponse = HTTPURLResponse.init(url: URL.temporaryURL(forFilename: ""), statusCode: -100, httpVersion: nil, headerFields: nil)
+        
+        
+        let expectedURL = URL.temporaryURL(forFilename: "Test")
+        
+        // Act
+        SUT!.postRequest(expectedURL, id: "", title: "", description: "") { (parson, responseString, error) in
+            XCTAssertNil(parson)
+            XCTAssertEqual(RestAPIResponseCode.serverError, (error as! RestAPIResponseCode))
+        }
+    }
+    
     func testPostRequest_HTTPStatusCode200_ParSONNotNIL()
     {
         // Arrange
