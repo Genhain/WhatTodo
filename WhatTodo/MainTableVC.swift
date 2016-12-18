@@ -28,6 +28,8 @@ class MainTableVC: UITableViewController {
         
         self.tableView.delegate = dataProvider
         self.tableView.dataSource = dataProvider
+        
+        self.dataProvider.attemptFetch()
     }
     
     func addTodo()
@@ -77,6 +79,22 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
     
     init(tableView: UITableView) {
         self.tableView = tableView
+    }
+    
+    //MARK: UITableViewDelegate
+    
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        return true
+    }
+    
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            //remove the deleted object from your data source.
+            //If your data source is an NSMutableArray, do this
+            let object = self.fetchedResultsController.object(at: indexPath)
+            coreDataStack.persistentContainer.viewContext.delete(object)
+            coreDataStack.saveContext()
+        }
     }
     
     //MARK: UITableViewDataSource
@@ -130,6 +148,8 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
         
         self.fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: coreDataStack.persistentContainer.viewContext, sectionNameKeyPath: nil, cacheName: nil)
         
+        self.fetchedResultsController.delegate = self
+        
         do {
             try self.fetchedResultsController.performFetch()
         } catch {
@@ -145,6 +165,8 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
     func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
         self.tableView?.endUpdates()
     }
+    
+    
     
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         
@@ -174,4 +196,5 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
         }
     }
 }
+
 

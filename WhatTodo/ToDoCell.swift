@@ -16,7 +16,12 @@ class ToDoCell:  UITableViewCell {
     
     public func configureCell(forToDo todo: ToDo) {
         
-        self.dateLabel.text = todo.dateTime?.description
+        self.dateLabel.adjustsFontSizeToFitWidth = true
+        self.detailLabel.adjustsFontSizeToFitWidth = true
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MMM d, H:mm a"
+        self.dateLabel.text = dateFormatter.string(from: todo.dateTime as! Date)
         self.detailLabel.text = todo.detail!
     }
 }
