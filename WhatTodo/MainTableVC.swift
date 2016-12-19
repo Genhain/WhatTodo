@@ -30,22 +30,27 @@ class MainTableVC: UITableViewController, TableEventProtocol {
         self.tableView.dataSource = dataProvider
         
 
-        _ = self.dataProvider.attemptFetch(withPredicate: nil, delegate: self.dataProvider)
+        self.dataProvider.fetchedResultsController = self.dataProvider.attemptFetch(withPredicate: nil, delegate: self.dataProvider)
     }
     
     func addTodo()
     {
-        self.presentAlert()
+        self.presentAlert(forTodo: nil)
     }
     
-    func presentAlert(forTodo todo: ToDo = ToDo(context: coreDataStack.persistentContainer.viewContext)) {
+    func presentAlert(forTodo todo: ToDo?) {
         let alertController = UIAlertController(title: "Add To Do", message: "Please input your task to do:", preferredStyle: .alert)
         
         let confirmAction = UIAlertAction(title: "Confirm", style: .default) { (_) in
             if let field = alertController.textFields?[0] {
                 // store your data
                 
-                todo.detail = field.text!
+                var newTodo = todo
+                if newTodo == nil {
+                    newTodo = ToDo(context: coreDataStack.persistentContainer.viewContext)
+                }
+                
+                newTodo?.detail = field.text!
                 
                 coreDataStack.saveContext()
                 
