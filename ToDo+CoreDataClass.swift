@@ -14,7 +14,9 @@ public class ToDo: NSManagedObject, ParSONDeserializable
 {
     
     public static func create(inContext context: NSManagedObjectContext) -> Self {
-        return .init(context: context)
+        let entityDescription = NSEntityDescription.entity(forEntityName: "ToDo", in: context)
+        
+        return .init(entity: entityDescription!, insertInto: nil)
     }
     
     public func deserialize(_ parSONObject: ParSON, context: NSManagedObjectContext, keyPath: String) throws {
@@ -24,6 +26,25 @@ public class ToDo: NSManagedObject, ParSONDeserializable
         let dateString: String = try parSONObject.value(forKeyPath: "\(keyPath).datetime")
         self.dateTime = dateFormatter.date(from: dateString) as NSDate?
         self.detail = try parSONObject.value(forKeyPath: "\(keyPath).taskDetail")
+        
+        let fetchRequest: NSFetchRequest<ToDo> = ToDo.fetchRequest()
+        
+        let datePredicate = NSPredicate(format: "dateTime == %@", self.dateTime!)
+        let detailPredicate = NSPredicate(format: "detail == %@", self.detail!)
+        
+        fetchRequest.predicate = NSCompoundPredicate.init(andPredicateWithSubpredicates: [datePredicate, detailPredicate])
+        fetchRequest.entity = self.entity
+        
+        context.perform {
+            do {
+                if try fetchRequest.execute().count == 0 {
+                    context.insert(self)
+                }
+            }
+            catch  {
+                print(error)
+            }
+        }
     }
 
     public override func awakeFromInsert() {

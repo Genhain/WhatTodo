@@ -59,10 +59,9 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
     public func getTodos() {
         restAPI.getRequest(todoEndPointURL) { (parSON, responseString, error) in
             parSON?.enumerateObjects(ofType: ToDo.self, forKeyPath: "", context: coreDataStack.persistentContainer.viewContext, enumerationsClosure: { (deserialisable) in
-                self.fetchedResultsController = nil
+                
+                
             })
-            
-            
         }
     }
     
