@@ -29,6 +29,7 @@ class MainTableVC: UITableViewController, TableEventProtocol {
         self.tableView.delegate = dataProvider
         self.tableView.dataSource = dataProvider
         
+        self.dataProvider.postUnsynchronizedTodos()
 
         self.dataProvider.fetchedResultsController = self.dataProvider.attemptFetch(withPredicate: nil, delegate: self.dataProvider)
     }

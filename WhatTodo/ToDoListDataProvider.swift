@@ -20,6 +20,8 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
     var tableView: UITableView?
     var tableEventHandler: TableEventProtocol?
     
+    private(set) var restAPI: RestAPI = RestAPI()
+    
     init(tableView: UITableView, tableEventHandler: TableEventProtocol) {
         
         super.init()
@@ -31,12 +33,6 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
                                                selector: #selector(applicationDidBecomeActive),
                                                name: .UIApplicationDidBecomeActive,
                                                object: nil)
-        
-        let syncedAttribute = "isSynchronized"
-        
-        let syncPredicate = NSPredicate(format: "%K == false",   syncedAttribute)
-        
-        let frcUnsynced = self.attemptFetch(withPredicate: syncPredicate, delegate: nil)
         
     }
     
@@ -51,6 +47,36 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
         let syncPredicate = NSPredicate(format: "%K == false",   syncedAttribute)
         
         _ = self.attemptFetch(withPredicate: syncPredicate, delegate: nil)
+    }
+    
+    public func postUnsynchronizedTodos() {
+        let syncPredicate = NSPredicate(format: "isSynchronized == false")
+        
+        let frcUnsynced = self.attemptFetch(withPredicate: syncPredicate, delegate: nil)
+        
+        
+        if frcUnsynced.fetchedObjects!.count > 0 {
+            todoPostIterator = frcUnsynced.fetchedObjects!.makeIterator()
+            self.postUnsync(todo:todoPostIterator!.next()!)
+        }
+    }
+    
+    private var todoPostIterator: IndexingIterator<[ToDo]>? = nil
+    private func postUnsync( todo: ToDo ) {
+        
+        restAPI.postRequest(todoEndPointURL, title: todo.detail!, dateTime: todo.dateTime! as Date, onCompletion: { (parSON, responseString, error) in
+            
+            if error == nil {
+                todo.isSynchronized = true
+                
+                if let nextTodo = self.todoPostIterator!.next() {
+                    self.postUnsync(todo: nextTodo)
+                }
+                else {
+                    coreDataStack.saveContext()
+                }
+            }
+        })
     }
     
     //MARK: UITableViewDelegate
