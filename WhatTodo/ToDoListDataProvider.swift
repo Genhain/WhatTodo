@@ -41,12 +41,7 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
     }
     
     func applicationDidBecomeActive() {
-        
-        let syncedAttribute = "isSynchronized"
-        
-        let syncPredicate = NSPredicate(format: "%K == false",   syncedAttribute)
-        
-        _ = self.attemptFetch(withPredicate: syncPredicate, delegate: nil)
+        self.postUnsynchronizedTodos()
     }
     
     public func postUnsynchronizedTodos() {
@@ -58,6 +53,16 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
         if frcUnsynced.fetchedObjects!.count > 0 {
             todoPostIterator = frcUnsynced.fetchedObjects!.makeIterator()
             self.postUnsync(todo:todoPostIterator!.next()!)
+        }
+    }
+    
+    public func getTodos() {
+        restAPI.getRequest(todoEndPointURL) { (parSON, responseString, error) in
+            parSON?.enumerateObjects(ofType: ToDo.self, forKeyPath: "", context: coreDataStack.persistentContainer.viewContext, enumerationsClosure: { (deserialisable) in
+                self.fetchedResultsController = nil
+            })
+            
+            
         }
     }
     

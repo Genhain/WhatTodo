@@ -150,7 +150,9 @@ class RestAPITests: XCTestCase {
     
         // Assert
         XCTAssertEqual(expectedURL, spy!.lastRequest?.url)
-        XCTAssertEqual("datetime=\(expectedDate.description)&taskDetail=\(expectedTitle)&isFinished=no", String(data: spy!.lastRequest!.httpBody!, encoding: String.Encoding.utf8))
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MM-dd-yyyy HH:mm:ss Z"
+        XCTAssertEqual("datetime=\(dateFormatter.string(from: expectedDate))&taskDetail=\(expectedTitle)&isFinished=no", String(data: spy!.lastRequest!.httpBody!, encoding: String.Encoding.utf8))
     }
     
     func testPostRequest_URLSessionFake_RequestShouldEqualTestDataTwo()
@@ -174,7 +176,9 @@ class RestAPITests: XCTestCase {
         
         // Assert
         XCTAssertEqual(expectedURL, spy?.lastRequest?.url)
-        XCTAssertEqual("datetime=\(expectedDate.description)&taskDetail=\(expectedTitle)&isFinished=no", String(data: spy!.lastRequest!.httpBody!, encoding: String.Encoding.utf8))
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MM-dd-yyyy HH:mm:ss Z"
+        XCTAssertEqual("datetime=\(dateFormatter.string(from: expectedDate))&taskDetail=\(expectedTitle)&isFinished=no", String(data: spy!.lastRequest!.httpBody!, encoding: String.Encoding.utf8))
     }
     
     func testPostRequest_JSONHandlerFake_jsonObjectWasCalled()

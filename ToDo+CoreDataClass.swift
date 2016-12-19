@@ -8,9 +8,23 @@
 
 import Foundation
 import CoreData
+import  ParSON
 
-
-public class ToDo: NSManagedObject {
+public class ToDo: NSManagedObject, ParSONDeserializable
+{
+    
+    public static func create(inContext context: NSManagedObjectContext) -> Self {
+        return .init(context: context)
+    }
+    
+    public func deserialize(_ parSONObject: ParSON, context: NSManagedObjectContext, keyPath: String) throws {
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MM-dd-yyyy HH:mm:ss ZZZ"
+        let dateString: String = try parSONObject.value(forKeyPath: "\(keyPath).datetime")
+        self.dateTime = dateFormatter.date(from: dateString) as NSDate?
+        self.detail = try parSONObject.value(forKeyPath: "\(keyPath).taskDetail")
+    }
 
     public override func awakeFromInsert() {
         super.awakeFromInsert()
@@ -19,4 +33,6 @@ public class ToDo: NSManagedObject {
         self.isFinished = false
         self.isSynchronized = false
     }
+    
+    
 }

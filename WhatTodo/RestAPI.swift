@@ -78,7 +78,9 @@ public class RestAPI
         var request = URLRequest(url: url)
         
         request.httpMethod = "POST"
-        let postString = "datetime=\(dateTime.description)&taskDetail=\(title)&isFinished=no"
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MM-dd-yyyy HH:mm:ss Z"
+        let postString = "datetime=\(dateFormatter.string(from: dateTime))&taskDetail=\(title)&isFinished=no"
         request.httpBody = postString.data(using: String.Encoding.utf8)
         
         self.beginDataTask(with: request, onCompletion: onCompletion)
