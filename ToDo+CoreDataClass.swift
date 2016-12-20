@@ -31,10 +31,11 @@ public class ToDo: NSManagedObject, ParSONDeserializable
     public override func awakeFromInsert() {
         super.awakeFromInsert()
         
-        self.dateTime = Date() as NSDate?
+        if self.dateTime == nil {
+            self.dateTime = Date() as NSDate?
+        }
+        
         self.isFinished = false
         self.isSynchronized = false
     }
-    
-    
 }

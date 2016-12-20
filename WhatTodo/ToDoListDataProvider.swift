@@ -150,7 +150,9 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
                 self.fetchedResultsController.managedObjectContext.perform {
                     do {
                         if try fetchRequest.execute().count == 0 {
+                            todo.isSynchronized = true
                             self.fetchedResultsController.managedObjectContext.insert(todo)
+                            coreDataStack.saveContext()
                         }
                     }
                     catch  {
