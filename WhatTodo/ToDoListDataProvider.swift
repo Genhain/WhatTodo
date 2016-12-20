@@ -16,7 +16,18 @@ protocol TableEventProtocol {
 
 class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource, NSFetchedResultsControllerDelegate {
     
-    var fetchedResultsController: NSFetchedResultsController<ToDo>!
+    lazy var fetchedResultsController: NSFetchedResultsController<ToDo> = {
+        let fetchRequest: NSFetchRequest<ToDo> = ToDo.fetchRequest()
+        let dateSort = NSSortDescriptor(key: "dateTime", ascending: false)
+        fetchRequest.sortDescriptors = [dateSort]
+        
+        let frc = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: coreDataStack.persistentContainer.viewContext, sectionNameKeyPath: nil, cacheName: nil)
+        
+        frc.delegate = self
+        
+        return frc
+    }()
+    
     var tableView: UITableView?
     var tableEventHandler: TableEventProtocol?
     
@@ -42,64 +53,6 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
     
     func applicationDidBecomeActive() {
         self.postUnsynchronizedTodos()
-    }
-    
-    public func postUnsynchronizedTodos() {
-        let syncPredicate = NSPredicate(format: "isSynchronized == false")
-        
-        let frcUnsynced = self.attemptFetch(withPredicate: syncPredicate, delegate: nil)
-        
-        
-        if frcUnsynced.fetchedObjects!.count > 0 {
-            todoPostIterator = frcUnsynced.fetchedObjects!.makeIterator()
-            self.postUnsync(todo:todoPostIterator!.next()!)
-        }
-    }
-    
-    public func getTodos(onComplete: (Void) -> Void) {
-        restAPI.getRequest(todoEndPointURL) { (parSON, responseString, error) in
-            parSON?.enumerateObjects(ofType: ToDo.self, forKeyPath: "", context: coreDataStack.persistentContainer.viewContext, enumerationsClosure: { (deserialisable) in
-                
-                guard let todo = deserialisable as? ToDo else { return }
-                
-                let fetchRequest: NSFetchRequest<ToDo> = ToDo.fetchRequest()
-                
-                let datePredicate = NSPredicate(format: "dateTime == %@", todo.dateTime!)
-                let detailPredicate = NSPredicate(format: "detail == %@", todo.detail!)
-                
-                fetchRequest.predicate = NSCompoundPredicate.init(andPredicateWithSubpredicates: [datePredicate, detailPredicate])
-                fetchRequest.entity = todo.entity
-                
-                coreDataStack.persistentContainer.viewContext.perform {
-                    do {
-                        if try fetchRequest.execute().count == 0 {
-                            coreDataStack.persistentContainer.viewContext.insert(todo)
-                        }
-                    }
-                    catch  {
-                        print(error)
-                    }
-                }
-            })
-        }
-    }
-    
-    private var todoPostIterator: IndexingIterator<[ToDo]>? = nil
-    private func postUnsync( todo: ToDo ) {
-        
-        restAPI.postRequest(todoEndPointURL, title: todo.detail!, dateTime: todo.dateTime! as Date, onCompletion: { (parSON, responseString, error) in
-            
-            if error == nil {
-                todo.isSynchronized = true
-                
-                if let nextTodo = self.todoPostIterator!.next() {
-                    self.postUnsync(todo: nextTodo)
-                }
-                else {
-                    coreDataStack.saveContext()
-                }
-            }
-        })
     }
     
     //MARK: UITableViewDelegate
@@ -140,7 +93,7 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
     @available(iOS 2.0, *)
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         
-        guard let frc = self.fetchedResultsController else { return 0 }
+        let frc = self.fetchedResultsController
         
         if let sections = frc.sections {
             let sectionInfo = sections[section]
@@ -152,7 +105,7 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
     
     func numberOfSections(in tableView: UITableView) -> Int {
         
-        guard let frc = self.fetchedResultsController else { return 0 }
+        let frc = self.fetchedResultsController
         
         if let sections = frc.sections {
             return sections.count
@@ -168,28 +121,76 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
         cell.configureCell(forToDo: todoItem)
     }
     
-    func attemptFetch(withPredicate predicate: NSPredicate?, delegate: NSFetchedResultsControllerDelegate?) -> NSFetchedResultsController<ToDo> {
+    func attemptFetch(withPredicate predicate: NSPredicate?) {
         
-        let fetchRequest: NSFetchRequest<ToDo> = ToDo.fetchRequest()
-        let dateSort = NSSortDescriptor(key: "dateTime", ascending: false)
-        fetchRequest.sortDescriptors = [dateSort]
-        
-        if let predicate = predicate {
-            fetchRequest.predicate = predicate
-        }
-        
-        let frc = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: coreDataStack.persistentContainer.viewContext, sectionNameKeyPath: nil, cacheName: nil)
-        
-        frc.delegate = delegate
+        let frc = self.fetchedResultsController
+        frc.fetchRequest.predicate = predicate
         
         do {
             try frc.performFetch()
         } catch {
             print(error)
         }
-        
-        return frc
     }
+    
+    public func getTodos() {
+        restAPI.getRequest(todoEndPointURL) { (parSON, responseString, error) in
+            parSON?.enumerateObjects(ofType: ToDo.self, forKeyPath: "", context: coreDataStack.persistentContainer.viewContext, enumerationsClosure: { (deserialisable) in
+                
+                guard let todo = deserialisable as? ToDo else { return }
+                
+                let fetchRequest: NSFetchRequest<ToDo> = ToDo.fetchRequest()
+                
+                let datePredicate = NSPredicate(format: "dateTime == %@", todo.dateTime!)
+                let detailPredicate = NSPredicate(format: "detail == %@", todo.detail!)
+                
+                fetchRequest.predicate = NSCompoundPredicate.init(andPredicateWithSubpredicates: [datePredicate, detailPredicate])
+                fetchRequest.entity = todo.entity
+                
+                self.fetchedResultsController.managedObjectContext.perform {
+                    do {
+                        if try fetchRequest.execute().count == 0 {
+                            self.fetchedResultsController.managedObjectContext.insert(todo)
+                        }
+                    }
+                    catch  {
+                        print(error)
+                    }
+                }
+            })
+        }
+    }
+    
+    public func postUnsynchronizedTodos() {
+        let syncPredicate = NSPredicate(format: "isSynchronized == false")
+        
+        self.attemptFetch(withPredicate: syncPredicate)
+        
+        if self.fetchedResultsController.fetchedObjects!.count > 0 {
+            todoPostIterator = self.fetchedResultsController.fetchedObjects!.makeIterator()
+            self.postUnsync(todo:todoPostIterator!.next()!)
+        }
+    }
+    
+    private var todoPostIterator: IndexingIterator<[ToDo]>? = nil
+    private func postUnsync( todo: ToDo ) {
+        
+        restAPI.postRequest(todoEndPointURL, title: todo.detail!, dateTime: todo.dateTime! as Date, onCompletion: { (parSON, responseString, error) in
+            
+            if error == nil {
+                todo.isSynchronized = true
+                
+                if let nextTodo = self.todoPostIterator!.next() {
+                    self.postUnsync(todo: nextTodo)
+                }
+                else {
+                    coreDataStack.saveContext()
+                }
+            }
+        })
+    }
+    
+    //MARK: Fetch Delegate
     
     func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
         
