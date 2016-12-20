@@ -164,12 +164,13 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
     }
     
     public func postUnsynchronizedTodos() {
-        let syncPredicate = NSPredicate(format: "isSynchronized == false")
         
-        self.attemptFetch(withPredicate: syncPredicate)
+        let unsynchronisedTodos = self.fetchedResultsController.fetchedObjects?.filter({ (element) -> Bool in
+            element.isSynchronized == false
+        })
         
-        if self.fetchedResultsController.fetchedObjects!.count > 0 {
-            todoPostIterator = self.fetchedResultsController.fetchedObjects!.makeIterator()
+        if unsynchronisedTodos!.count > 0 {
+            todoPostIterator = unsynchronisedTodos!.makeIterator()
             self.postUnsync(todo:todoPostIterator!.next()!)
         }
     }

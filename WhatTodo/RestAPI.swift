@@ -79,7 +79,7 @@ public class RestAPI
         
         request.httpMethod = "POST"
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MM-dd-yyyy HH:mm:ss Z"
+        dateFormatter.dateFormat = "MM-dd-yyyy HH:mm:ss zzzz"
         let postString = "datetime=\(dateFormatter.string(from: dateTime))&taskDetail=\(title)&isFinished=no"
         request.httpBody = postString.data(using: String.Encoding.utf8)
         

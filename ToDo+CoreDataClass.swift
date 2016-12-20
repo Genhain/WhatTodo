@@ -22,7 +22,7 @@ public class ToDo: NSManagedObject, ParSONDeserializable
     public func deserialize(_ parSONObject: ParSON, context: NSManagedObjectContext, keyPath: String) throws {
         
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MM-dd-yyyy HH:mm:ss ZZZ"
+        dateFormatter.dateFormat = "MM-dd-yyyy HH:mm:ss zzzz"
         let dateString: String = try parSONObject.value(forKeyPath: "\(keyPath).datetime")
         self.dateTime = dateFormatter.date(from: dateString) as NSDate?
         self.detail = try parSONObject.value(forKeyPath: "\(keyPath).taskDetail")

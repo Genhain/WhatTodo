@@ -31,6 +31,7 @@ class MainTableVC: UITableViewController, TableEventProtocol {
         
         self.dataProvider.attemptFetch(withPredicate: nil)
         self.dataProvider.getTodos()
+        self.dataProvider.postUnsynchronizedTodos()
     }
     
     func addTodo()

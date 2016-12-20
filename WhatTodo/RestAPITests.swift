@@ -151,7 +151,7 @@ class RestAPITests: XCTestCase {
         // Assert
         XCTAssertEqual(expectedURL, spy!.lastRequest?.url)
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MM-dd-yyyy HH:mm:ss Z"
+        dateFormatter.dateFormat = "MM-dd-yyyy HH:mm:ss zzzz"
         XCTAssertEqual("datetime=\(dateFormatter.string(from: expectedDate))&taskDetail=\(expectedTitle)&isFinished=no", String(data: spy!.lastRequest!.httpBody!, encoding: String.Encoding.utf8))
     }
     
@@ -177,7 +177,7 @@ class RestAPITests: XCTestCase {
         // Assert
         XCTAssertEqual(expectedURL, spy?.lastRequest?.url)
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MM-dd-yyyy HH:mm:ss Z"
+        dateFormatter.dateFormat = "MM-dd-yyyy HH:mm:ss zzzz"
         XCTAssertEqual("datetime=\(dateFormatter.string(from: expectedDate))&taskDetail=\(expectedTitle)&isFinished=no", String(data: spy!.lastRequest!.httpBody!, encoding: String.Encoding.utf8))
     }
     
