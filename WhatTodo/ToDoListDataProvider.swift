@@ -10,12 +10,14 @@ import Foundation
 import UIKit
 import CoreData
 
+let toDodateFormat = "MM-dd-yyyy HH:mm:ss zzzz"
+
 protocol TableEventProtocol {
     func editRow(forRowAction action: UITableViewRowAction, todo: ToDo, indexPath: IndexPath)
 }
 
-class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource, NSFetchedResultsControllerDelegate {
-    
+class ToDoListDataProvider: NSObject
+{
     lazy var fetchedResultsController: NSFetchedResultsController<ToDo> = {
         let fetchRequest: NSFetchRequest<ToDo> = ToDo.fetchRequest()
         let dateSort = NSSortDescriptor(key: "dateTime", ascending: false)
@@ -54,72 +56,7 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
     func applicationDidBecomeActive() {
         self.postUnsynchronizedTodos()
     }
-    
-    //MARK: UITableViewDelegate
-    
-    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
-        return true
-    }
-    
-    func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
-        
-        let deleteRowAction = UITableViewRowAction(style: .default, title: "Delete") { (rowAction, indexPath) in
-            let object = self.fetchedResultsController.object(at: indexPath)
-            coreDataStack.persistentContainer.viewContext.delete(object)
-            coreDataStack.saveContext()
-        }
-        
-        let editRowAction = UITableViewRowAction(style: .default, title: "Edit") { (rowAction, indexPath) in
-            let object = self.fetchedResultsController.object(at: indexPath) 
-            self.tableEventHandler?.editRow(forRowAction: rowAction, todo: object, indexPath: indexPath)
-        }
-        editRowAction.backgroundColor = #colorLiteral(red: 0.8039215803, green: 0.8039215803, blue: 0.8039215803, alpha: 1)
-        
-        return [deleteRowAction,editRowAction]
-    }
-    
-    //MARK: UITableViewDataSource
-    
-    @available(iOS 2.0, *)
-    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        
-        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell",  for: indexPath) as! ToDoCell
-        
-        self.configureCell(cell: cell, indexPath: indexPath)
-        
-        return cell
-    }
-    
-    @available(iOS 2.0, *)
-    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        
-        let frc = self.fetchedResultsController
-        
-        if let sections = frc.sections {
-            let sectionInfo = sections[section]
-            return sectionInfo.numberOfObjects
-        }
-        
-        return 0
-    }
-    
-    func numberOfSections(in tableView: UITableView) -> Int {
-        
-        let frc = self.fetchedResultsController
-        
-        if let sections = frc.sections {
-            return sections.count
-        }
-        
-        return 0
-    }
-    
     //MARK: Functionality
-    
-    func configureCell(cell: ToDoCell, indexPath: IndexPath) {
-        let todoItem = self.fetchedResultsController.object(at: indexPath)
-        cell.configureCell(forToDo: todoItem)
-    }
     
     func attemptFetch(withPredicate predicate: NSPredicate?) {
         
@@ -187,8 +124,96 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
         })
     }
     
-    //MARK: Fetch Delegate
+    public func patchToDo(todo: ToDo, fieldToPatch: String, newValue: String)
+    {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = toDodateFormat
+        restAPI.patchRequest(todoEndPointURL, field: "datetime", fieldByValue: dateFormatter.string(from: todo.dateTime! as Date), fieldToChange: fieldToPatch, newValue: newValue) { (parSON, responseString, error) in
+            
+            print(error)
+        }
+    }
+}
+
+//MARK: UITableViewDataSource
+extension ToDoListDataProvider: UITableViewDataSource, ToDoCellEventHandler
+{
     
+    //MARK: ToDoCellEventHandler
+    
+    func isfinishedChanged(toDo: ToDo, newValue: Bool) {
+         var newValueAsString = "no"
+        if newValue {
+            newValueAsString = "yes"
+        }
+        self.patchToDo(todo: toDo, fieldToPatch: "isFinished", newValue: newValueAsString)
+    }
+    
+    
+    @available(iOS 2.0, *)
+    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
+        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell",  for: indexPath) as! ToDoCell
+        
+        self.configureCell(cell: cell, indexPath: indexPath)
+        
+        return cell
+    }
+    
+    fileprivate func configureCell(cell: ToDoCell, indexPath: IndexPath) {
+        let todoItem = self.fetchedResultsController.object(at: indexPath)
+        cell.configureCell(forToDo: todoItem, eventHandler: self)
+    }
+    
+    @available(iOS 2.0, *)
+    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        
+        let frc = self.fetchedResultsController
+        
+        if let sections = frc.sections {
+            let sectionInfo = sections[section]
+            return sectionInfo.numberOfObjects
+        }
+        
+        return 0
+    }
+    
+    func numberOfSections(in tableView: UITableView) -> Int {
+        
+        let frc = self.fetchedResultsController
+        
+        if let sections = frc.sections {
+            return sections.count
+        }
+        
+        return 0
+    }
+}
+
+//MARK: UITableViewDelegate
+extension ToDoListDataProvider: UITableViewDelegate
+{
+    func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
+        
+        let deleteRowAction = UITableViewRowAction(style: .default, title: "Delete") { (rowAction, indexPath) in
+            let object = self.fetchedResultsController.object(at: indexPath)
+            coreDataStack.persistentContainer.viewContext.delete(object)
+            coreDataStack.saveContext()
+        }
+        
+        let editRowAction = UITableViewRowAction(style: .default, title: "Edit") { (rowAction, indexPath) in
+            let object = self.fetchedResultsController.object(at: indexPath)
+            self.tableEventHandler?.editRow(forRowAction: rowAction, todo: object, indexPath: indexPath)
+        }
+        editRowAction.backgroundColor = #colorLiteral(red: 0.8039215803, green: 0.8039215803, blue: 0.8039215803, alpha: 1)
+        
+        return [deleteRowAction,editRowAction]
+    }
+}
+
+//MARK: Fetch Delegate
+extension ToDoListDataProvider: NSFetchedResultsControllerDelegate
+{
     func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
         
         self.tableView?.beginUpdates()
