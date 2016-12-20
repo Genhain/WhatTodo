@@ -139,24 +139,18 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
                 
                 guard let todo = deserialisable as? ToDo else { return }
                 
-                let fetchRequest: NSFetchRequest<ToDo> = ToDo.fetchRequest()
-                
-                let datePredicate = NSPredicate(format: "dateTime == %@", todo.dateTime!)
-                let detailPredicate = NSPredicate(format: "detail == %@", todo.detail!)
-                
-                fetchRequest.predicate = NSCompoundPredicate.init(andPredicateWithSubpredicates: [datePredicate, detailPredicate])
-                fetchRequest.entity = todo.entity
+                let existingTodosByFilter = self.fetchedResultsController.fetchedObjects!.filter({ (todoElement) -> Bool in
+                    let retVal = (todoElement.dateTime!.description == todo.dateTime!.description &&
+                        todoElement.detail! == todo.detail!)
+                    return retVal
+                })
                 
                 self.fetchedResultsController.managedObjectContext.perform {
-                    do {
-                        if try fetchRequest.execute().count == 0 {
-                            todo.isSynchronized = true
-                            self.fetchedResultsController.managedObjectContext.insert(todo)
-                            coreDataStack.saveContext()
-                        }
-                    }
-                    catch  {
-                        print(error)
+            
+                    if existingTodosByFilter.count == 0 {
+                        todo.isSynchronized = true
+                        self.fetchedResultsController.managedObjectContext.insert(todo)
+                        coreDataStack.saveContext()
                     }
                 }
             })

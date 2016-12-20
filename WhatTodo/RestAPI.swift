@@ -94,6 +94,17 @@ public class RestAPI
         self.beginDataTask(with: request, onCompletion: onCompletion)
     }
     
+    public func patchRequest(_ url: URL, field: String, fieldByValue: String, fieldToChange: String, newValue: String, onCompletion: @escaping ServiceResponse) {
+        
+        var urlRequest = URLRequest(url: todoEndPointURL.appendingPathComponent("/\(field)/\(fieldByValue)"))
+        urlRequest.httpMethod = "PATCH"
+        urlRequest.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        let postString = "\(fieldToChange)=\(newValue)"
+        urlRequest.httpBody = postString.data(using: String.Encoding.utf8)
+        
+        self.beginDataTask(with: urlRequest, onCompletion: onCompletion)
+    }
+    
     public func deleteRequest(_ url: URL, field: String, fieldValue value: String, onCompletion: @escaping ServiceResponse) {
         let urlForDeleteion = url.appendingPathComponent("/\(field)/\(value)")
         var request = URLRequest(url: urlForDeleteion)

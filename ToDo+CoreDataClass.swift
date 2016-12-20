@@ -34,8 +34,5 @@ public class ToDo: NSManagedObject, ParSONDeserializable
         if self.dateTime == nil {
             self.dateTime = Date() as NSDate?
         }
-        
-        self.isFinished = false
-        self.isSynchronized = false
     }
 }
