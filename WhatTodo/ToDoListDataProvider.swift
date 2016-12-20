@@ -56,11 +56,30 @@ class ToDoListDataProvider: NSObject, UITableViewDelegate, UITableViewDataSource
         }
     }
     
-    public func getTodos() {
+    public func getTodos(onComplete: (Void) -> Void) {
         restAPI.getRequest(todoEndPointURL) { (parSON, responseString, error) in
             parSON?.enumerateObjects(ofType: ToDo.self, forKeyPath: "", context: coreDataStack.persistentContainer.viewContext, enumerationsClosure: { (deserialisable) in
                 
+                guard let todo = deserialisable as? ToDo else { return }
                 
+                let fetchRequest: NSFetchRequest<ToDo> = ToDo.fetchRequest()
+                
+                let datePredicate = NSPredicate(format: "dateTime == %@", todo.dateTime!)
+                let detailPredicate = NSPredicate(format: "detail == %@", todo.detail!)
+                
+                fetchRequest.predicate = NSCompoundPredicate.init(andPredicateWithSubpredicates: [datePredicate, detailPredicate])
+                fetchRequest.entity = todo.entity
+                
+                coreDataStack.persistentContainer.viewContext.perform {
+                    do {
+                        if try fetchRequest.execute().count == 0 {
+                            coreDataStack.persistentContainer.viewContext.insert(todo)
+                        }
+                    }
+                    catch  {
+                        print(error)
+                    }
+                }
             })
         }
     }
