@@ -18,32 +18,26 @@ protocol TableEventProtocol {
 
 class ToDoListDataProvider: NSObject
 {
-    lazy var fetchedResultsController: NSFetchedResultsController<ToDo> = {
-        let fetchRequest: NSFetchRequest<ToDo> = ToDo.fetchRequest()
-        let dateSort = NSSortDescriptor(key: "dateTime", ascending: false)
-        fetchRequest.sortDescriptors = [dateSort]
-        
-        let frc = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: coreDataStack.persistentContainer.viewContext, sectionNameKeyPath: nil, cacheName: nil)
-        
-        frc.delegate = self
-        
-        return frc
-    }()
+    var fetchedResultsController: NSFetchedResultsController<ToDo>?
+    var todoRequestManager: ToDoRequestManager?
     
     var tableView: UITableView?
     var tableSearchController: UISearchController?
     fileprivate var searchTableSelectedIndexPath: IndexPath?
     var tableEventHandler: TableEventProtocol?
     
-    private(set) var restAPI: RestAPI = RestAPI()
-    
-    init(tableView: UITableView, searchController: UISearchController?, tableEventHandler: TableEventProtocol) {
+    init(tableView: UITableView, searchController: UISearchController?, tableEventHandler: TableEventProtocol, fetchedResultsController: NSFetchedResultsController<ToDo>, todoRequestManager: ToDoRequestManager) {
         
         super.init()
+        
         
         self.tableView = tableView
         self.tableSearchController = searchController
         self.tableEventHandler = tableEventHandler
+        self.fetchedResultsController = fetchedResultsController
+        self.todoRequestManager = todoRequestManager
+        
+        self.fetchedResultsController?.delegate = self
         
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(applicationDidBecomeActive),
@@ -70,14 +64,16 @@ class ToDoListDataProvider: NSObject
     func applicationDidBecomeActive() {
         self.attemptFetch(withPredicate: nil)
         
-        self.getTodos { self.tableView?.refreshControl?.endRefreshing() }
-        self.postUnsynchronizedTodos()
+        self.todoRequestManager!.getTodos(fetchedResultsController: self.fetchedResultsController!) {
+            self.tableView?.refreshControl?.endRefreshing()
+        }
+        self.todoRequestManager!.postUnsynchronizedTodos(fetchedResultsController: self.fetchedResultsController!)
         self.tableView?.refreshControl?.endRefreshing()
     }
     
     func applicationDidEnterBackground() {
         self.attemptFetch(withPredicate: nil)
-        self.postUnsynchronizedTodos()
+        self.todoRequestManager!.postUnsynchronizedTodos(fetchedResultsController: self.fetchedResultsController!)
     }
     
     //MARK: Functionality
@@ -86,7 +82,7 @@ class ToDoListDataProvider: NSObject
         self.attemptFetch(withPredicate: nil)
         
         if currentReachabilityStatus != .notReachable {
-            self.getTodos {
+            self.todoRequestManager!.getTodos(fetchedResultsController: self.fetchedResultsController!) {
                 self.tableView?.refreshControl!.endRefreshing()
             }
         }
@@ -94,103 +90,17 @@ class ToDoListDataProvider: NSObject
             self.tableView?.refreshControl?.endRefreshing()
         }
         
-        self.postUnsynchronizedTodos()
+        self.todoRequestManager!.postUnsynchronizedTodos(fetchedResultsController: self.fetchedResultsController!)
     }
     
     func attemptFetch(withPredicate predicate: NSPredicate?) {
         
-        let frc = self.fetchedResultsController
+        let frc = self.fetchedResultsController!
         frc.fetchRequest.predicate = predicate
         
         do {
             try frc.performFetch()
         } catch {
-            print(error)
-        }
-    }
-    
-    public func getTodos(onComplete: @escaping (Void) -> Void) {
-        restAPI.getRequest(todoEndPointURL) { (parSON, responseString, error) in
-            parSON?.enumerateObjects(ofType: ToDo.self, forKeyPath: "", context: coreDataStack.persistentContainer.viewContext, enumerationsClosure: { (deserialisable) in
-                
-                guard let todo = deserialisable as? ToDo else { return }
-                guard self.isValidTodo(todo: todo) else { return }
-                
-                let existingTodosByFilter = self.fetchedResultsController.fetchedObjects!.filter({ (todoElement) -> Bool in
-                    
-                    let retVal = (todoElement.dateTime!.description == todo.dateTime!.description &&
-                        todoElement.detail! == todo.detail!)
-                    return retVal
-                })
-                
-                self.fetchedResultsController.managedObjectContext.perform {
-            
-                    if existingTodosByFilter.count == 0 {
-                        todo.isSynchronized = true
-                        self.fetchedResultsController.managedObjectContext.insert(todo)
-                        coreDataStack.saveContext()
-                    }
-                }
-            })
-            
-            onComplete()
-        }
-    }
-    
-    private func isValidTodo(todo: ToDo) -> Bool {
-        
-        guard todo.dateTime != nil else { return false }
-        guard todo.detail != nil else { return false}
-        
-        return true
-    }
-    
-    public func postUnsynchronizedTodos() {
-        
-        let unsynchronisedTodos = self.fetchedResultsController.fetchedObjects?.filter({ (element) -> Bool in
-            element.isSynchronized == false
-        })
-        
-        if unsynchronisedTodos!.count > 0 {
-            todoPostIterator = unsynchronisedTodos!.makeIterator()
-            self.postUnsync(todo:todoPostIterator!.next()!)
-        }
-    }
-    
-    private var todoPostIterator: IndexingIterator<[ToDo]>? = nil
-    private func postUnsync( todo: ToDo ) {
-        
-        restAPI.postRequest(todoEndPointURL, title: todo.detail!, dateTime: todo.dateTime! as Date, onCompletion: { (parSON, responseString, error) in
-            
-            if error == nil {
-                todo.isSynchronized = true
-                
-                if let nextTodo = self.todoPostIterator!.next() {
-                    self.postUnsync(todo: nextTodo)
-                }
-                else {
-                    coreDataStack.saveContext()
-                }
-            }
-        })
-    }
-    
-    public func patchToDo(todo: ToDo, fieldToPatch: String, newValue: String)
-    {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = toDodateFormat
-        restAPI.patchRequest(todoEndPointURL, field: "datetime", fieldByValue: dateFormatter.string(from: todo.dateTime! as Date), fieldToChange: fieldToPatch, newValue: newValue) { (parSON, responseString, error) in
-            
-            print(error)
-        }
-    }
-    
-    public func deleteToDo(todo: ToDo)
-    {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = toDodateFormat
-        restAPI.deleteRequest(todoEndPointURL, field: "datetime", fieldValue: dateFormatter.string(from: todo.dateTime! as Date)) { (parson, responseString, error) in
-            
             print(error)
         }
     }
@@ -221,7 +131,7 @@ extension ToDoListDataProvider: UISearchResultsUpdating, UISearchBarDelegate
     }
     
     func filterContentForSearchText(searchText: String, scope: String = "All") {
-        filteredTodos = self.fetchedResultsController.fetchedObjects!.filter { todo in
+        filteredTodos = self.fetchedResultsController!.fetchedObjects!.filter { todo in
             return todo.detail!.lowercased().contains(searchText.lowercased())
         }
         
@@ -242,7 +152,8 @@ extension ToDoListDataProvider: UITableViewDataSource, ToDoCellEventHandler
         if newValue {
             newValueAsString = "yes"
         }
-        self.patchToDo(todo: toDo, fieldToPatch: "isFinished", newValue: newValueAsString)
+        
+        self.todoRequestManager!.patchToDo(todo: toDo, fieldToPatch: "isFinished", newValue: newValueAsString)
         
         self.searchTableSelectedIndexPath = self.tableView?.indexPath(for: cell)
     }
@@ -261,7 +172,7 @@ extension ToDoListDataProvider: UITableViewDataSource, ToDoCellEventHandler
     }
     
     fileprivate func configureCell(cell: ToDoCell, indexPath: IndexPath) {
-        var todo = self.fetchedResultsController.object(at: indexPath)
+        var todo = self.fetchedResultsController!.object(at: indexPath)
         
         if tableSearchController!.isActive && tableSearchController!.searchBar.text != "" && self.filteredTodos!.count > 0 {
             
@@ -279,7 +190,7 @@ extension ToDoListDataProvider: UITableViewDataSource, ToDoCellEventHandler
             return filteredTodos!.count
         }
         
-        let frc = self.fetchedResultsController
+        let frc = self.fetchedResultsController!
         
         if let sections = frc.sections {
             let sectionInfo = sections[section]
@@ -291,7 +202,7 @@ extension ToDoListDataProvider: UITableViewDataSource, ToDoCellEventHandler
     
     func numberOfSections(in tableView: UITableView) -> Int {
         
-        let frc = self.fetchedResultsController
+        let frc = self.fetchedResultsController!
         
         if let sections = frc.sections {
             return sections.count
@@ -313,10 +224,10 @@ extension ToDoListDataProvider: UITableViewDelegate
                 todo = self.filteredTodos![indexPath.row]
             }
             else {
-                todo = self.fetchedResultsController.object(at: indexPath)
+                todo = self.fetchedResultsController!.object(at: indexPath)
             }
             self.searchTableSelectedIndexPath = indexPath
-            self.deleteToDo(todo: todo)
+            self.todoRequestManager!.deleteToDo(todo: todo)
             self.tableSearchController!.isActive = false
             coreDataStack.persistentContainer.viewContext.delete(todo)
             coreDataStack.saveContext()
@@ -329,7 +240,7 @@ extension ToDoListDataProvider: UITableViewDelegate
                 todo = self.filteredTodos![indexPath.row]
             }
             else {
-                todo = self.fetchedResultsController.object(at: indexPath)
+                todo = self.fetchedResultsController!.object(at: indexPath)
             }
             self.searchTableSelectedIndexPath = indexPath
             self.tableEventHandler?.editRow(forRowAction: rowAction, todo: todo, indexPath: indexPath)

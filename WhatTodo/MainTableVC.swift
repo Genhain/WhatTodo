@@ -12,10 +12,23 @@ import CoreData
 
 let todoEndPointURL = URL(string: "https://sheetsu.com/apis/v1.0/6e59b7bf3d94")!
 
-class MainTableVC: UITableViewController, TableEventProtocol {
+class MainTableVC: UITableViewController, TableEventProtocol
+{
+    lazy var fetchedResultsController: NSFetchedResultsController<ToDo> = {
+        let fetchRequest: NSFetchRequest<ToDo> = ToDo.fetchRequest()
+        let dateSort = NSSortDescriptor(key: "dateTime", ascending: false)
+        fetchRequest.sortDescriptors = [dateSort]
+        
+        let frc = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: coreDataStack.persistentContainer.viewContext, sectionNameKeyPath: nil, cacheName: nil)
+        
+        return frc
+    }()
+
     
     var dataProvider: ToDoListDataProvider!
     var searchController: UISearchController!
+    
+    var todoRequestManager = ToDoRequestManager()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -31,7 +44,11 @@ class MainTableVC: UITableViewController, TableEventProtocol {
         self.tableView.tableHeaderView = searchController.searchBar
         self.tableView.contentOffset = .init(x: 0, y: searchController.searchBar.frame.height)
         
-        self.dataProvider = ToDoListDataProvider(tableView: self.tableView, searchController: self.searchController, tableEventHandler: self)
+        self.dataProvider = ToDoListDataProvider(tableView: self.tableView,
+                                                 searchController: self.searchController,
+                                                 tableEventHandler: self,
+                                                 fetchedResultsController: self.fetchedResultsController,
+                                                 todoRequestManager: self.todoRequestManager)
         
         searchController.searchResultsUpdater = self.dataProvider
         searchController.searchBar.delegate = self.dataProvider
@@ -40,8 +57,9 @@ class MainTableVC: UITableViewController, TableEventProtocol {
         self.tableView.dataSource = dataProvider
         
         self.dataProvider.attemptFetch(withPredicate: nil)
-        self.dataProvider.getTodos {}
-        self.dataProvider.postUnsynchronizedTodos()
+        
+        self.todoRequestManager.getTodos(fetchedResultsController: self.fetchedResultsController) {}
+        self.todoRequestManager.postUnsynchronizedTodos(fetchedResultsController: self.fetchedResultsController)
     }
     
     func addTodo()
@@ -66,7 +84,7 @@ class MainTableVC: UITableViewController, TableEventProtocol {
                 coreDataStack.saveContext()
                 
                 if newTodo!.isSynchronized {
-                    self.dataProvider.patchToDo(todo: newTodo!, fieldToPatch: "taskDetail", newValue: newTodo!.detail!)
+                    self.todoRequestManager.patchToDo(todo: newTodo!, fieldToPatch: "taskDetail", newValue: newTodo!.detail!)
                 }
                 
                 self.tableView?.setEditing(false, animated: true)
@@ -102,7 +120,6 @@ class MainTableVC: UITableViewController, TableEventProtocol {
     
     func deleteRow(forRowAction action: UITableViewRowAction, todo: ToDo, indexPath: IndexPath) {
         self.tableView?.setEditing(false, animated: true)
-        searchController.resignFirstResponder()
     }
     
     override func didReceiveMemoryWarning() {
