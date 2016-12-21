@@ -17,6 +17,7 @@
 		08314D371E0274E900A4D5BD /* RestAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08314D361E0274E900A4D5BD /* RestAPITests.swift */; };
 		08314D391E027E0E00A4D5BD /* URL+Testing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08314D381E027E0E00A4D5BD /* URL+Testing.swift */; };
 		08314D3B1E027EC300A4D5BD /* RestAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08314D3A1E027EC300A4D5BD /* RestAPI.swift */; };
+		083DBF701E0A4C04003B49C7 /* Connectivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 083DBF6F1E0A4C04003B49C7 /* Connectivity.swift */; };
 		0899A0CA1E0707A400FDA851 /* ToDo+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0899A0C81E0707A400FDA851 /* ToDo+CoreDataClass.swift */; };
 		0899A0CB1E0707A400FDA851 /* ToDo+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0899A0C91E0707A400FDA851 /* ToDo+CoreDataProperties.swift */; };
 		0899A0CD1E0724FB00FDA851 /* ToDoCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0899A0CC1E0724FB00FDA851 /* ToDoCell.swift */; };
@@ -60,6 +61,7 @@
 		08314D361E0274E900A4D5BD /* RestAPITests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RestAPITests.swift; sourceTree = "<group>"; };
 		08314D381E027E0E00A4D5BD /* URL+Testing.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "URL+Testing.swift"; sourceTree = "<group>"; };
 		08314D3A1E027EC300A4D5BD /* RestAPI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RestAPI.swift; sourceTree = "<group>"; };
+		083DBF6F1E0A4C04003B49C7 /* Connectivity.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Connectivity.swift; sourceTree = "<group>"; };
 		0899A0C81E0707A400FDA851 /* ToDo+CoreDataClass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "ToDo+CoreDataClass.swift"; path = "../ToDo+CoreDataClass.swift"; sourceTree = "<group>"; };
 		0899A0C91E0707A400FDA851 /* ToDo+CoreDataProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "ToDo+CoreDataProperties.swift"; path = "../ToDo+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		0899A0CC1E0724FB00FDA851 /* ToDoCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ToDoCell.swift; sourceTree = "<group>"; };
@@ -142,6 +144,7 @@
 				08314D0C1E022B5900A4D5BD /* WhatTodo.xcdatamodeld */,
 				08314D3A1E027EC300A4D5BD /* RestAPI.swift */,
 				08314D361E0274E900A4D5BD /* RestAPITests.swift */,
+				083DBF6F1E0A4C04003B49C7 /* Connectivity.swift */,
 			);
 			path = WhatTodo;
 			sourceTree = "<group>";
@@ -472,6 +475,7 @@
 			files = (
 				08314D391E027E0E00A4D5BD /* URL+Testing.swift in Sources */,
 				08314D3B1E027EC300A4D5BD /* RestAPI.swift in Sources */,
+				083DBF701E0A4C04003B49C7 /* Connectivity.swift in Sources */,
 				0899A0CF1E07533600FDA851 /* ToDoListDataProvider.swift in Sources */,
 				08314D0E1E022B5900A4D5BD /* WhatTodo.xcdatamodeld in Sources */,
 				08314D081E022B5900A4D5BD /* MainTableVC.swift in Sources */,

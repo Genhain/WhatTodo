@@ -124,9 +124,11 @@ public class RestAPI
                 return
             }
             
-            let json = try? self.jsonHandler.jsonObject(with: data!, options: [])
+            guard let validData = data else { onCompletion(nil,nil, dataTaskError); return }
             
-            let responseString = String(data: data!, encoding: String.Encoding.utf8)
+            let json = try? self.jsonHandler.jsonObject(with: validData, options: [])
+            
+            let responseString = String(data: validData, encoding: String.Encoding.utf8)
             
             if self.handleErrors(error: dataTaskError, response: response, responseString: responseString, onComplete: onCompletion) { return }
             

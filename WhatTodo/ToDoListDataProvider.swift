@@ -52,6 +52,12 @@ class ToDoListDataProvider: NSObject
                                                name: .UIApplicationDidEnterBackground,
                                                object: nil)
         
+        
+        let refreshControl = UIRefreshControl()
+        self.tableView?.addSubview(refreshControl)
+        self.tableView?.refreshControl = refreshControl
+        
+        refreshControl.addTarget(self, action: #selector(refreshTable), for: .valueChanged)
     }
     
     deinit {
@@ -60,8 +66,10 @@ class ToDoListDataProvider: NSObject
     
     func applicationDidBecomeActive() {
         self.attemptFetch(withPredicate: nil)
-        self.getTodos()
+        
+        self.getTodos { self.tableView?.refreshControl?.endRefreshing() }
         self.postUnsynchronizedTodos()
+        self.tableView?.refreshControl?.endRefreshing()
     }
     
     func applicationDidEnterBackground() {
@@ -70,6 +78,21 @@ class ToDoListDataProvider: NSObject
     }
     
     //MARK: Functionality
+    
+    func refreshTable() {
+        self.attemptFetch(withPredicate: nil)
+        
+        if currentReachabilityStatus != .notReachable {
+            self.getTodos {
+                self.tableView?.refreshControl!.endRefreshing()
+            }
+        }
+        else {
+            self.tableView?.refreshControl?.endRefreshing()
+        }
+        
+        self.postUnsynchronizedTodos()
+    }
     
     func attemptFetch(withPredicate predicate: NSPredicate?) {
         
@@ -83,7 +106,7 @@ class ToDoListDataProvider: NSObject
         }
     }
     
-    public func getTodos() {
+    public func getTodos(onComplete: @escaping (Void) -> Void) {
         restAPI.getRequest(todoEndPointURL) { (parSON, responseString, error) in
             parSON?.enumerateObjects(ofType: ToDo.self, forKeyPath: "", context: coreDataStack.persistentContainer.viewContext, enumerationsClosure: { (deserialisable) in
                 
@@ -106,6 +129,8 @@ class ToDoListDataProvider: NSObject
                     }
                 }
             })
+            
+            onComplete()
         }
     }
     
@@ -166,6 +191,11 @@ class ToDoListDataProvider: NSObject
             print(error)
         }
     }
+}
+
+extension ToDoListDataProvider: UISearchControllerDelegate
+{
+    
 }
 
 //MARK: UITableViewDataSource

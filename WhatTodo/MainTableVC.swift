@@ -30,8 +30,13 @@ class MainTableVC: UITableViewController, TableEventProtocol {
         self.tableView.dataSource = dataProvider
         
         self.dataProvider.attemptFetch(withPredicate: nil)
-        self.dataProvider.getTodos()
+        self.dataProvider.getTodos {}
         self.dataProvider.postUnsynchronizedTodos()
+        
+        let searchController = UISearchController(searchResultsController: self)
+        searchController.delegate = self.dataProvider
+        self.tableView.tableHeaderView = searchController.searchBar
+        self.tableView.contentOffset = .init(x: 0, y: searchController.searchBar.frame.height)
     }
     
     func addTodo()
