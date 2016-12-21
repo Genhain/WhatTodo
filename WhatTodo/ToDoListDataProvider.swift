@@ -47,6 +47,11 @@ class ToDoListDataProvider: NSObject
                                                name: .UIApplicationDidBecomeActive,
                                                object: nil)
         
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(applicationDidEnterBackground),
+                                               name: .UIApplicationDidEnterBackground,
+                                               object: nil)
+        
     }
     
     deinit {
@@ -54,8 +59,16 @@ class ToDoListDataProvider: NSObject
     }
     
     func applicationDidBecomeActive() {
+        self.attemptFetch(withPredicate: nil)
+        self.getTodos()
         self.postUnsynchronizedTodos()
     }
+    
+    func applicationDidEnterBackground() {
+        self.attemptFetch(withPredicate: nil)
+        self.postUnsynchronizedTodos()
+    }
+    
     //MARK: Functionality
     
     func attemptFetch(withPredicate predicate: NSPredicate?) {

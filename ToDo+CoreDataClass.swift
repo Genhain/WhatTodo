@@ -26,6 +26,8 @@ public class ToDo: NSManagedObject, ParSONDeserializable
         let dateString: String = try parSONObject.value(forKeyPath: "\(keyPath).datetime")
         self.dateTime = dateFormatter.date(from: dateString) as NSDate?
         self.detail = try parSONObject.value(forKeyPath: "\(keyPath).taskDetail")
+        let isFinished = try parSONObject.value(forKeyPath: "\(keyPath).isFinished") == "yes" ? true:false
+        self.isFinished = isFinished
     }
 
     public override func awakeFromInsert() {

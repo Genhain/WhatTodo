@@ -51,9 +51,13 @@ class MainTableVC: UITableViewController, TableEventProtocol {
                     newTodo = ToDo(context: coreDataStack.persistentContainer.viewContext)
                 }
                 
-                newTodo?.detail = field.text!
+                newTodo!.detail = field.text!
                 
                 coreDataStack.saveContext()
+                
+                if newTodo!.isSynchronized {
+                    self.dataProvider.patchToDo(todo: newTodo!, fieldToPatch: "taskDetail", newValue: newTodo!.detail!)
+                }
                 
                 self.tableView?.setEditing(false, animated: true)
         
