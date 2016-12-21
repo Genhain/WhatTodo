@@ -193,9 +193,36 @@ class ToDoListDataProvider: NSObject
     }
 }
 
-extension ToDoListDataProvider: UISearchControllerDelegate
+extension ToDoListDataProvider: UISearchResultsUpdating, UISearchBarDelegate
 {
+    private struct AssociatedKeys {
+        static var filteredTodos = [ToDo]()
+    }
     
+    var filteredTodos: [ToDo]? {
+        get {
+            return (objc_getAssociatedObject(self, &AssociatedKeys.filteredTodos) as? [ToDo])!
+        }
+        
+        set {
+            if let newValue = newValue {
+                objc_setAssociatedObject(self, &AssociatedKeys.filteredTodos, newValue, .OBJC_ASSOCIATION_COPY_NONATOMIC)
+            }
+        }
+    }
+    
+    @available(iOS 8.0, *)
+    public func updateSearchResults(for searchController: UISearchController) {
+        self.filterContentForSearchText(searchText: searchController.searchBar.text!)
+    }
+    
+    func filterContentForSearchText(searchText: String, scope: String = "All") {
+        filteredTodos = self.fetchedResultsController.fetchedObjects!.filter { todo in
+            return todo.detail!.lowercased().contains(searchText.lowercased())
+        }
+        
+        self.tableView!.reloadData()
+    }
 }
 
 //MARK: UITableViewDataSource

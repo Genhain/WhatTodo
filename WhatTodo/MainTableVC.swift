@@ -15,6 +15,7 @@ let todoEndPointURL = URL(string: "https://sheetsu.com/apis/v1.0/6e59b7bf3d94")!
 class MainTableVC: UITableViewController, TableEventProtocol {
     
     var dataProvider: ToDoListDataProvider!
+    var searchController: UISearchController!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -33,10 +34,13 @@ class MainTableVC: UITableViewController, TableEventProtocol {
         self.dataProvider.getTodos {}
         self.dataProvider.postUnsynchronizedTodos()
         
-        let searchController = UISearchController(searchResultsController: self)
-        searchController.delegate = self.dataProvider
+        searchController = UISearchController(searchResultsController: nil)
+        searchController.dimsBackgroundDuringPresentation = false
+        
         self.tableView.tableHeaderView = searchController.searchBar
         self.tableView.contentOffset = .init(x: 0, y: searchController.searchBar.frame.height)
+        searchController.searchResultsUpdater = self.dataProvider
+        searchController.searchBar.delegate = self.dataProvider
     }
     
     func addTodo()
