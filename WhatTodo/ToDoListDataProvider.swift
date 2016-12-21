@@ -31,15 +31,18 @@ class ToDoListDataProvider: NSObject
     }()
     
     var tableView: UITableView?
+    var tableSearchController: UISearchController?
+    fileprivate var searchTableSelectedIndexPath: IndexPath?
     var tableEventHandler: TableEventProtocol?
     
     private(set) var restAPI: RestAPI = RestAPI()
     
-    init(tableView: UITableView, tableEventHandler: TableEventProtocol) {
+    init(tableView: UITableView, searchController: UISearchController?, tableEventHandler: TableEventProtocol) {
         
         super.init()
         
         self.tableView = tableView
+        self.tableSearchController = searchController
         self.tableEventHandler = tableEventHandler
         
         NotificationCenter.default.addObserver(self,
@@ -193,6 +196,7 @@ class ToDoListDataProvider: NSObject
     }
 }
 
+//MARK: UISearchResultsUpdating, UISearchBarDelegate
 extension ToDoListDataProvider: UISearchResultsUpdating, UISearchBarDelegate
 {
     private struct AssociatedKeys {
@@ -223,22 +227,28 @@ extension ToDoListDataProvider: UISearchResultsUpdating, UISearchBarDelegate
         
         self.tableView!.reloadData()
     }
+    
+    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        self.tableView!.reloadData()
+        self.attemptFetch(withPredicate: nil)
+    }
 }
 
 //MARK: UITableViewDataSource
 extension ToDoListDataProvider: UITableViewDataSource, ToDoCellEventHandler
 {
-    
-    //MARK: ToDoCellEventHandler
-    
-    func isfinishedChanged(toDo: ToDo, newValue: Bool) {
-         var newValueAsString = "no"
+    internal func isfinishedChanged(_ cell: ToDoCell, toDo: ToDo, newValue: Bool) {
+        var newValueAsString = "no"
         if newValue {
             newValueAsString = "yes"
         }
         self.patchToDo(todo: toDo, fieldToPatch: "isFinished", newValue: newValueAsString)
+        
+        self.searchTableSelectedIndexPath = self.tableView?.indexPath(for: cell)
     }
+
     
+    //MARK: ToDoCellEventHandler
     
     @available(iOS 2.0, *)
     public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -251,12 +261,23 @@ extension ToDoListDataProvider: UITableViewDataSource, ToDoCellEventHandler
     }
     
     fileprivate func configureCell(cell: ToDoCell, indexPath: IndexPath) {
-        let todoItem = self.fetchedResultsController.object(at: indexPath)
-        cell.configureCell(forToDo: todoItem, eventHandler: self)
+        var todo = self.fetchedResultsController.object(at: indexPath)
+        
+        if tableSearchController!.isActive && tableSearchController!.searchBar.text != "" && self.filteredTodos!.count > 0 {
+            
+            todo = filteredTodos![indexPath.row]
+        }
+        
+        cell.configureCell(forToDo: todo, eventHandler: self)
     }
     
     @available(iOS 2.0, *)
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        
+        if tableSearchController!.isActive,
+            tableSearchController!.searchBar.text != "" {
+            return filteredTodos!.count
+        }
         
         let frc = self.fetchedResultsController
         
@@ -286,15 +307,32 @@ extension ToDoListDataProvider: UITableViewDelegate
     func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
         
         let deleteRowAction = UITableViewRowAction(style: .default, title: "Delete") { (rowAction, indexPath) in
-            let object = self.fetchedResultsController.object(at: indexPath)
-            self.deleteToDo(todo: object)
-            coreDataStack.persistentContainer.viewContext.delete(object)
+            var todo:ToDo!
+            
+            if self.tableSearchController!.isActive {
+                todo = self.filteredTodos![indexPath.row]
+            }
+            else {
+                todo = self.fetchedResultsController.object(at: indexPath)
+            }
+            self.searchTableSelectedIndexPath = indexPath
+            self.deleteToDo(todo: todo)
+            self.tableSearchController!.isActive = false
+            coreDataStack.persistentContainer.viewContext.delete(todo)
             coreDataStack.saveContext()
         }
         
         let editRowAction = UITableViewRowAction(style: .default, title: "Edit") { (rowAction, indexPath) in
-            let object = self.fetchedResultsController.object(at: indexPath)
-            self.tableEventHandler?.editRow(forRowAction: rowAction, todo: object, indexPath: indexPath)
+            var todo:ToDo!
+            
+            if self.tableSearchController!.isActive {
+                todo = self.filteredTodos![indexPath.row]
+            }
+            else {
+                todo = self.fetchedResultsController.object(at: indexPath)
+            }
+            self.searchTableSelectedIndexPath = indexPath
+            self.tableEventHandler?.editRow(forRowAction: rowAction, todo: todo, indexPath: indexPath)
         }
         editRowAction.backgroundColor = #colorLiteral(red: 0.8039215803, green: 0.8039215803, blue: 0.8039215803, alpha: 1)
         
@@ -324,7 +362,12 @@ extension ToDoListDataProvider: NSFetchedResultsControllerDelegate
             break
         case .delete:
             if let indexPath = indexPath {
-                self.tableView?.deleteRows(at: [indexPath], with: .fade)
+                var validIndexPath = indexPath
+                
+                if tableSearchController!.isActive {
+                    validIndexPath = searchTableSelectedIndexPath!
+                }
+                self.tableView?.deleteRows(at: [validIndexPath], with: .fade)
             }
             break
         case .move:
@@ -335,8 +378,15 @@ extension ToDoListDataProvider: NSFetchedResultsControllerDelegate
             break
         case .update:
             if let indexPath = indexPath {
-                let cell = tableView?.cellForRow(at: indexPath) as! ToDoCell
-                self.configureCell(cell: cell, indexPath: indexPath)
+                var validIndexPath = indexPath
+                
+                if let searchedIndexPath = searchTableSelectedIndexPath,
+                tableSearchController!.isActive {
+                    validIndexPath = searchedIndexPath
+                }
+                
+                let cell = tableView?.cellForRow(at: validIndexPath) as! ToDoCell
+                self.configureCell(cell: cell, indexPath: validIndexPath)
             }
             break
         }

@@ -25,7 +25,16 @@ class MainTableVC: UITableViewController, TableEventProtocol {
         let button = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(MainTableVC.addTodo))
         self.navigationItem.rightBarButtonItem = button
         
-        self.dataProvider = ToDoListDataProvider(tableView: self.tableView, tableEventHandler: self)
+        searchController = UISearchController(searchResultsController: nil)
+        searchController.dimsBackgroundDuringPresentation = false
+        
+        self.tableView.tableHeaderView = searchController.searchBar
+        self.tableView.contentOffset = .init(x: 0, y: searchController.searchBar.frame.height)
+        
+        self.dataProvider = ToDoListDataProvider(tableView: self.tableView, searchController: self.searchController, tableEventHandler: self)
+        
+        searchController.searchResultsUpdater = self.dataProvider
+        searchController.searchBar.delegate = self.dataProvider
         
         self.tableView.delegate = dataProvider
         self.tableView.dataSource = dataProvider
@@ -33,14 +42,6 @@ class MainTableVC: UITableViewController, TableEventProtocol {
         self.dataProvider.attemptFetch(withPredicate: nil)
         self.dataProvider.getTodos {}
         self.dataProvider.postUnsynchronizedTodos()
-        
-        searchController = UISearchController(searchResultsController: nil)
-        searchController.dimsBackgroundDuringPresentation = false
-        
-        self.tableView.tableHeaderView = searchController.searchBar
-        self.tableView.contentOffset = .init(x: 0, y: searchController.searchBar.frame.height)
-        searchController.searchResultsUpdater = self.dataProvider
-        searchController.searchBar.delegate = self.dataProvider
     }
     
     func addTodo()
@@ -84,13 +85,24 @@ class MainTableVC: UITableViewController, TableEventProtocol {
         alertController.addAction(confirmAction)
         alertController.addAction(cancelAction)
         
-        self.present(alertController, animated: true, completion: nil)
+        if searchController.isActive {
+           searchController.present(alertController, animated: true, completion: nil)
+        }
+        else {
+           self.present(alertController, animated: true, completion: nil)
+        }
+        
     }
     
     //MARK: TableEventProtocol
     
     func editRow(forRowAction action: UITableViewRowAction, todo: ToDo, indexPath: IndexPath) {
         self.presentAlert(forTodo: todo)
+    }
+    
+    func deleteRow(forRowAction action: UITableViewRowAction, todo: ToDo, indexPath: IndexPath) {
+        self.tableView?.setEditing(false, animated: true)
+        searchController.resignFirstResponder()
     }
     
     override func didReceiveMemoryWarning() {

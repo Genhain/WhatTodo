@@ -10,7 +10,7 @@ import Foundation
 import UIKit
 
 protocol ToDoCellEventHandler {
-    func isfinishedChanged(toDo: ToDo, newValue: Bool)
+    func isfinishedChanged(_ cell:ToDoCell, toDo: ToDo, newValue: Bool)
 }
 
 class ToDoCell:  UITableViewCell {
@@ -43,7 +43,7 @@ class ToDoCell:  UITableViewCell {
         
         self.todoEntitiy?.isFinished = !(self.todoEntitiy!.isFinished)
         
-        self.todoCellEventHandler?.isfinishedChanged(toDo: self.todoEntitiy!, newValue: self.todoEntitiy!.isFinished)
+        self.todoCellEventHandler?.isfinishedChanged(self, toDo: self.todoEntitiy!, newValue: self.todoEntitiy!.isFinished)
         
         self.updateToDoStatus()
         
