@@ -88,8 +88,10 @@ class ToDoListDataProvider: NSObject
             parSON?.enumerateObjects(ofType: ToDo.self, forKeyPath: "", context: coreDataStack.persistentContainer.viewContext, enumerationsClosure: { (deserialisable) in
                 
                 guard let todo = deserialisable as? ToDo else { return }
+                guard self.isValidTodo(todo: todo) else { return }
                 
                 let existingTodosByFilter = self.fetchedResultsController.fetchedObjects!.filter({ (todoElement) -> Bool in
+                    
                     let retVal = (todoElement.dateTime!.description == todo.dateTime!.description &&
                         todoElement.detail! == todo.detail!)
                     return retVal
@@ -105,6 +107,14 @@ class ToDoListDataProvider: NSObject
                 }
             })
         }
+    }
+    
+    private func isValidTodo(todo: ToDo) -> Bool {
+        
+        guard todo.dateTime != nil else { return false }
+        guard todo.detail != nil else { return false}
+        
+        return true
     }
     
     public func postUnsynchronizedTodos() {
@@ -142,6 +152,16 @@ class ToDoListDataProvider: NSObject
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = toDodateFormat
         restAPI.patchRequest(todoEndPointURL, field: "datetime", fieldByValue: dateFormatter.string(from: todo.dateTime! as Date), fieldToChange: fieldToPatch, newValue: newValue) { (parSON, responseString, error) in
+            
+            print(error)
+        }
+    }
+    
+    public func deleteToDo(todo: ToDo)
+    {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = toDodateFormat
+        restAPI.deleteRequest(todoEndPointURL, field: "datetime", fieldValue: dateFormatter.string(from: todo.dateTime! as Date)) { (parson, responseString, error) in
             
             print(error)
         }
@@ -210,6 +230,7 @@ extension ToDoListDataProvider: UITableViewDelegate
         
         let deleteRowAction = UITableViewRowAction(style: .default, title: "Delete") { (rowAction, indexPath) in
             let object = self.fetchedResultsController.object(at: indexPath)
+            self.deleteToDo(todo: object)
             coreDataStack.persistentContainer.viewContext.delete(object)
             coreDataStack.saveContext()
         }
